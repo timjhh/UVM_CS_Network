@@ -70,13 +70,13 @@ function getCourseInfo(data) {
 		
 		let ttl = title.split(" ");
 		let course = {};
-		course.num = ttl[0].match(/[0-9]+/)[0];
+		//course.num = ttl[0].match(/[0-9]+/)[0];
 		course.name = title.match(/[^.]+/)[0];
 		course.credits = ttl[ttl.length-2];
 		course.desc = desc;
-
-
+		//console.log(desc.substring(desc.search("Prereq")).match(/\b\w+\s\d+\b/))
 		courses.push(course);
+		console.log(desc.substring(desc.search("Prereq")).match(/\w+\s\d+/))
 		//console.log(course.desc);
 	});
 	return courses;
@@ -142,18 +142,21 @@ function getStats(datum) {
 function createGraph(datum) {
 
 	var data = d3.entries(datum);
-	console.log(data)
-
-	var width=1024;
-	var height=800;
+	console.log(data);
+	//var data = d3.entries([1,2,3,4,5,6,7,8,9,10]);
 
 	d3.select("#graph")
-		.append("svg");
+		.append("svg")
+		.attr("width", "1000")
+		.attr("height", "1000");
+
+
 
 	var svg = d3.select("svg"),
-	    width = +svg.attr("width"),
-	    height = +svg.attr("height");
+	    width = svg.attr("width"),
+	    height = svg.attr("height");
 
+	console.log(svg.attr("width"));
 	var color = d3.scaleOrdinal(d3.schemeCategory20);
 
 	var simulation = d3.forceSimulation()
@@ -162,21 +165,22 @@ function createGraph(datum) {
 	    .force("center", d3.forceCenter(width / 2, height / 2));
 
 
-	  var link = svg.append("g")
-	      .attr("class", "links")
-	    .selectAll("line")
-	    .data(graph.links)
-	    .enter().append("line")
-	      .attr("stroke-width", 1);
+	  // var link = svg.append("g")
+	  //     .attr("class", "links")
+	  //   .selectAll("line")
+	  //   .data(data)
+	  //   .enter().append("line")
+	  //     .attr("stroke-width", 1);
 
 	  var node = svg.append("g")
 	      .attr("class", "nodes")
 	    .selectAll("g")
 	    .data(data)
-	    .enter().append("g")
+	    .enter().append("g");
 	    
 	  var circles = node.append("circle")
-	      .attr("r", (d) => Math.sqrt(d.key) * 30)
+	      //.attr("r", (d) => Math.sqrt(d.key) * 30)
+	      .attr("r", (d) => 10)
 	      .attr("fill", 'steelblue')
 	      .call(d3.drag()
 	          .on("start", dragstarted)
@@ -184,26 +188,26 @@ function createGraph(datum) {
 	          .on("end", dragended));
 
 	  var labels = node.append("text")
-	      .text((d) => d.name + ' ' + Math.round(d.value * 100) + '%')
+	      .text((d) => d.value.name)
 	      .attr('x', 6)
 	      .attr('y', 3);
 
 	  node.append("title")
-	      .text(function(d) { return d.name; });
+	      .text(function(d) { return d.value.name; });
 
 	  simulation
-	      .nodes(graph.nodes)
+	      .nodes(data)
 	      .on("tick", ticked);
 
-	  simulation.force("link")
-	      .links(graph.links);
+	  // simulation.force("link")
+	  //     .links(graph.links);
 
 	  function ticked() {
-	    link
-	        .attr("x1", function(d) { return d.source.x; })
-	        .attr("y1", function(d) { return d.source.y; })
-	        .attr("x2", function(d) { return d.target.x; })
-	        .attr("y2", function(d) { return d.target.y; });
+	    // link
+	    //     .attr("x1", function(d) { return d.source.x; })
+	    //     .attr("y1", function(d) { return d.source.y; })
+	    //     .attr("x2", function(d) { return d.target.x; })
+	    //     .attr("y2", function(d) { return d.target.y; });
 
 	    node
 	        .attr("transform", function(d) {
@@ -231,26 +235,26 @@ function createGraph(datum) {
 
 
 	// Rectangles
-	svg.selectAll("myRect")
-	  .data(data)
-	  .enter()
-	  .append("rect")
-	  .attr("x", 0 )
-	  .attr("y", function(d) { return y(d.key); })
-	  .attr("width", function(d) { return ((d.value * width) / max); })
-	  .attr("height", y.bandwidth() )
-	  .attr("fill", function(d) { return d.key.charCodeAt(0) % 2 ? "#64727b" : "#28363f" })
-	  .on("mouseover", function(d) {
-	  	tooltip.transition()
-	  	.duration(200)
-	  	.style("opacity", .9);
-	  	tooltip.html("Word: " + d.key + "<br/>" + "Uses: " + d.value)
-	  	.style("left", (d3.event.pageX) + "px")
-	  	.style("top", (d3.event.pageY - 28) + "px");
-	  }) 
-	  .on("mouseout", function(d) {
-	  	tooltip.transition()
-	  	.duration(500)
-	  	.style("opacity", 0);
-	  });
+	// svg.selectAll("myRect")
+	//   .data(data)
+	//   .enter()
+	//   .append("rect")
+	//   .attr("x", 0 )
+	//   .attr("y", function(d) { return y(d.key); })
+	//   .attr("width", function(d) { return ((d.value * width) / max); })
+	//   .attr("height", y.bandwidth() )
+	//   .attr("fill", function(d) { return d.key.charCodeAt(0) % 2 ? "#64727b" : "#28363f" })
+	//   .on("mouseover", function(d) {
+	//   	tooltip.transition()
+	//   	.duration(200)
+	//   	.style("opacity", .9);
+	//   	tooltip.html("Word: " + d.key + "<br/>" + "Uses: " + d.value)
+	//   	.style("left", (d3.event.pageX) + "px")
+	//   	.style("top", (d3.event.pageY - 28) + "px");
+	//   }) 
+	//   .on("mouseout", function(d) {
+	//   	tooltip.transition()
+	//   	.duration(500)
+	//   	.style("opacity", 0);
+	//   });
 }
