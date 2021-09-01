@@ -24,7 +24,7 @@ function query() {
 		const sanitized = await sanitize(locdata); // Associate each transcript link with a title to store
 		
 		$("#progress").append("Done!");
-		await appendTranscripts(episodes); // Create all transcripts in selection box
+		await createGraph(locdata); // Create all transcripts in selection box
 		
 
 	} catch(err) {
@@ -63,16 +63,29 @@ function getCourses(data) {
 function getCourseInfo(data) {
 	let title = "";
 	let desc = "";
-
+	let courses = [];
 	Array.from(data).forEach(function(d) {
-		console.log(d);
 		title = d.getElementsByClassName("courseblocktitle")[0].outerText;
 		desc = d.getElementsByClassName("courseblockdesc")[0].outerText;
-		console.log(title);
-		console.log(desc);
+		
+		let ttl = title.split(" ");
+		let course = {};
+		course.num = ttl[0].match(/[0-9]+/)[0];
+		course.name = title.match(/[^.]+/)[0];
+		course.credits = ttl[ttl.length-2];
+		course.desc = desc;
+
+
+		courses.push(course);
+		//console.log(course.desc);
 	});
+	return courses;
 }
 
+function sanitize(data) {
+	console.log(data)
+
+}
 
 // Gets all episode titles from an HTML webpage object
 // data MUST be in the form of an HTML webpage object
@@ -95,10 +108,7 @@ function getEpisodeTitles(data) {
 	
 	return titles;
 }
-function sanitize(data) {
-	
 
-}
 /*
 	Takes an unordered dictionary, changes it to a d3.entries() array, sorts by(guaranteed numerical) value and returns it
 */
@@ -131,90 +141,92 @@ function getStats(datum) {
 } 
 function createGraph(datum) {
 
+	var data = d3.entries(datum);
+	console.log(data)
+
+	var width=1024;
+	var height=800;
 
 	d3.select("#graph")
 		.append("svg");
 
-var svg = d3.select("svg"),
-    width = +svg.attr("width"),
-    height = +svg.attr("height");
+	var svg = d3.select("svg"),
+	    width = +svg.attr("width"),
+	    height = +svg.attr("height");
 
-var color = d3.scaleOrdinal(d3.schemeCategory20);
+	var color = d3.scaleOrdinal(d3.schemeCategory20);
 
-var simulation = d3.forceSimulation()
-    .force("link", d3.forceLink().id(function(d) { return d.id; }))
-    .force("charge", d3.forceManyBody())
-    .force("center", d3.forceCenter(width / 2, height / 2));
+	var simulation = d3.forceSimulation()
+	    .force("link", d3.forceLink().id(function(d) { return d.key; }))
+	    .force("charge", d3.forceManyBody())
+	    .force("center", d3.forceCenter(width / 2, height / 2));
 
-d3.json("miserables.json", function(error, graph) {
-  if (error) throw error;
 
-  var link = svg.append("g")
-      .attr("class", "links")
-    .selectAll("line")
-    .data(graph.links)
-    .enter().append("line")
-      .attr("stroke-width", 1);
+	  var link = svg.append("g")
+	      .attr("class", "links")
+	    .selectAll("line")
+	    .data(graph.links)
+	    .enter().append("line")
+	      .attr("stroke-width", 1);
 
-  var node = svg.append("g")
-      .attr("class", "nodes")
-    .selectAll("g")
-    .data(graph.nodes)
-    .enter().append("g")
-    
-  var circles = node.append("circle")
-      .attr("r", (d) => Math.sqrt(d.value) * 30)
-      .attr("fill", 'steelblue')
-      .call(d3.drag()
-          .on("start", dragstarted)
-          .on("drag", dragged)
-          .on("end", dragended));
+	  var node = svg.append("g")
+	      .attr("class", "nodes")
+	    .selectAll("g")
+	    .data(data)
+	    .enter().append("g")
+	    
+	  var circles = node.append("circle")
+	      .attr("r", (d) => Math.sqrt(d.key) * 30)
+	      .attr("fill", 'steelblue')
+	      .call(d3.drag()
+	          .on("start", dragstarted)
+	          .on("drag", dragged)
+	          .on("end", dragended));
 
-  var labels = node.append("text")
-      .text((d) => d.name + ' ' + Math.round(d.value * 100) + '%')
-      .attr('x', 6)
-      .attr('y', 3);
+	  var labels = node.append("text")
+	      .text((d) => d.name + ' ' + Math.round(d.value * 100) + '%')
+	      .attr('x', 6)
+	      .attr('y', 3);
 
-  node.append("title")
-      .text(function(d) { return d.name; });
+	  node.append("title")
+	      .text(function(d) { return d.name; });
 
-  simulation
-      .nodes(graph.nodes)
-      .on("tick", ticked);
+	  simulation
+	      .nodes(graph.nodes)
+	      .on("tick", ticked);
 
-  simulation.force("link")
-      .links(graph.links);
+	  simulation.force("link")
+	      .links(graph.links);
 
-  function ticked() {
-    link
-        .attr("x1", function(d) { return d.source.x; })
-        .attr("y1", function(d) { return d.source.y; })
-        .attr("x2", function(d) { return d.target.x; })
-        .attr("y2", function(d) { return d.target.y; });
+	  function ticked() {
+	    link
+	        .attr("x1", function(d) { return d.source.x; })
+	        .attr("y1", function(d) { return d.source.y; })
+	        .attr("x2", function(d) { return d.target.x; })
+	        .attr("y2", function(d) { return d.target.y; });
 
-    node
-        .attr("transform", function(d) {
-          return "translate(" + d.x + "," + d.y + ")";
-        })
-  }
-});
+	    node
+	        .attr("transform", function(d) {
+	          return "translate(" + d.x + "," + d.y + ")";
+	        })
+	  }
 
-function dragstarted(d) {
-  if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-  d.fx = d.x;
-  d.fy = d.y;
-}
+	function dragstarted(d) {
+	  if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+	  d.fx = d.x;
+	  d.fy = d.y;
+	}
 
-function dragged(d) {
-  d.fx = d3.event.x;
-  d.fy = d3.event.y;
-}
+	function dragged(d) {
+	  d.fx = d3.event.x;
+	  d.fy = d3.event.y;
+	}
 
-function dragended(d) {
-  if (!d3.event.active) simulation.alphaTarget(0);
-  d.fx = null;
-  d.fy = null;
-}
+	function dragended(d) {
+	  if (!d3.event.active) simulation.alphaTarget(0);
+	  d.fx = null;
+	  d.fy = null;
+	}
 
 
 
