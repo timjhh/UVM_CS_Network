@@ -57,7 +57,7 @@ function getCourses(data) {
 
 	return courses;
     
-	Array.from(courses).forEach(d => console.log(d));
+	//Array.from(courses).forEach(d => console.log(d));
 
 }
 function getCourseInfo(data) {
@@ -76,25 +76,76 @@ function getCourseInfo(data) {
 		course.name = title.match(/[^.]+/)[0];
 		course.credits = ttl[ttl.length-2];
 		course.desc = desc;
-		console.log(desc.substring(desc.search("Prereq")).match(/\b\w+\s\d+\b/))
+		//console.log(desc.substring(desc.search("Prereq")).match(/\b\w+\s\d+\b/))
 		courses.push({"id": course.name, "group": 1});
 		titles.push(course.name);
-		var prereq = desc.substring(desc.search("Prereq")).match(/\w+\s\d+/);
+
+		// Find starting index of prerequisite, co-requisite and cross-listed courses
+		var pr = desc.toLowerCase().search("prerequisite");
+		var cr = desc.toLowerCase().search("co-req");
+		var cl = desc.toLowerCase().search("cross-");
+		
+
+		// Find first occurrence of course number by searching for a word + space + number
+		// \w+ n-character word
+		// \s space character
+		// \d+ n-digit integer
+		var prereq = desc.substring(pr).match(/\w+\s\d+/);
+		
+
+		var idx = pr;
+		if(prereq) {
+			console.log("pr " + pr + " prereq " + prereq.index);
+			idx = idx + prereq.index;
+		}
+
+		// What-To-Find? Pre-req(0), Co-req(1), Cross-listed(2)?
+		var wtf = 0
+
 		while(prereq) {
-			links.push({source: prereq[0], target: course.name, value: 1 });
+
+
+			// If co-requisite/cross-listed comes before next pre-req course found
+			// Then switch what we are looking for
+			if(cr < idx) {
+				wtf = 1;
+			} else if(cl < idx) {
+				wtf = 2;
+			}
+			
+			// Add course to list of links for graph
+			// Also append status, to show whether course is pr, cr, cl
+			if(wtf == 0) {
+				links.push({source: prereq[0], target: course.name, value: 1, status: wtf });
+			} else if(wtf == 1) {
+				links.push({source: prereq[0], target: course.name, value: 1, status: wtf });
+			} else if(wtf == 2) {
+				links.push({source: prereq[0], target: course.name, value: 4, status: wtf });
+			}
+
+			if(prereq) {
+				// pr = pr - prereq.index;
+				// cr = cr - prereq.index;
+				// cl = cl - prereq.index;
+				idx = idx + prereq.index
+			}
+
+			// Start at last known index and search for another course
 			prereq = prereq.input.substring(prereq[0].length + prereq.index).match(/\w+\s\d+/);
 		}
-		console.log(course.desc);
+	
 	});
+
+	// If prereq course is not in database, add to course list
 	links.forEach(function(d) {
 
 		if(!(titles.includes(d.source))) {
 			titles.push[d.source];
-			courses.push({"id": d.source, "group": 1});
+			courses.push({"id": d.source, "group": 2});
 		}
 		if(!(titles.includes(d.target))) {
 			titles.push[d.target];
-			courses.push({"id": d.source, "group": 1});
+			courses.push({"id": d.source, "group": 2});
 		}
 
 	})
@@ -184,6 +235,15 @@ function createGraph(datum) {
 	    .selectAll("line")
 	    .data(links)
 	    .enter().append("line")
+	      .attr("class", function(d) {
+	      	console.log(d)
+	      	if(d.wtf == 1) {
+
+	      		return "coreq"
+	      	} else if(d.wtf == 2) {
+	      		return "crosslist"
+	      	}
+	      })
 	      .attr("stroke-width", 1);
 
 	  var node = svg.append("g")
@@ -202,7 +262,7 @@ function createGraph(datum) {
 	          .on("end", dragended));
 
 	  var labels = node.append("text")
-	      .text((d) => d.id)
+	      .text((d) => d.id.toUpperCase())
 	      .attr('x', 6)
 	      .attr('y', 3);
 
