@@ -76,14 +76,15 @@ function getCourseInfo(data) {
 		course.name = title.match(/[^.]+/)[0];
 		course.credits = ttl[ttl.length-2];
 		course.desc = desc;
-		//console.log(desc.substring(desc.search("Prereq")).match(/\b\w+\s\d+\b/))
+		console.log(desc.substring(desc.search("Prereq")).match(/\b\w+\s\d+\b/))
 		courses.push({"id": course.name, "group": 1});
 		titles.push(course.name);
 		var prereq = desc.substring(desc.search("Prereq")).match(/\w+\s\d+/);
-		if(prereq) {
+		while(prereq) {
 			links.push({source: prereq[0], target: course.name, value: 1 });
+			prereq = prereq.input.substring(prereq[0].length + prereq.index).match(/\w+\s\d+/);
 		}
-		//console.log(course.desc);
+		console.log(course.desc);
 	});
 	links.forEach(function(d) {
 
@@ -98,13 +99,10 @@ function getCourseInfo(data) {
 
 	})
 
-	console.log();
-
 	return [courses, links];
 }
 
 function sanitize(data) {
-	console.log(data)
 
 }
 
@@ -164,8 +162,6 @@ function createGraph(datum) {
 
 	var data = datum[0];
 	var links = datum[1];
-	console.log(data);
-	//var data = d3.entries([1,2,3,4,5,6,7,8,9,10]);
 
 	d3.select("#graph")
 		.append("svg")
@@ -198,7 +194,7 @@ function createGraph(datum) {
 	    
 	  var circles = node.append("circle")
 	      //.attr("r", (d) => Math.sqrt(d.key) * 30)
-	      .attr("r", (d) => 10)
+	      .attr("r", (d) => 5)
 	      .attr("fill", 'steelblue')
 	      .call(d3.drag()
 	          .on("start", dragstarted)
