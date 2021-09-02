@@ -64,6 +64,7 @@ function getCourseInfo(data) {
 	let title = "";
 	let desc = "";
 	let courses = [];
+	let links = [];
 	Array.from(data).forEach(function(d) {
 		title = d.getElementsByClassName("courseblocktitle")[0].outerText;
 		desc = d.getElementsByClassName("courseblockdesc")[0].outerText;
@@ -75,11 +76,17 @@ function getCourseInfo(data) {
 		course.credits = ttl[ttl.length-2];
 		course.desc = desc;
 		//console.log(desc.substring(desc.search("Prereq")).match(/\b\w+\s\d+\b/))
-		courses.push(course);
-		console.log(desc.substring(desc.search("Prereq")).match(/\w+\s\d+/))
+		courses.push({"id": course.name, "group": 1});
+		var prereq = desc.substring(desc.search("Prereq")).match(/\w+\s\d+/);
+		if(prereq) {
+			links.push({source: prereq[0], target: course.name, value: 8 });
+		}
 		//console.log(course.desc);
 	});
-	return courses;
+	links.forEach(function(d) {
+		courses.map(e => console.log(e))
+	});
+	return [courses, links];
 }
 
 function sanitize(data) {
@@ -122,7 +129,7 @@ function sortByValue(datum) {
 
 }
 function getStats(datum) {
-	var data = d3.entries(datum);
+	var data = d3.entries(datum[0]);
 
 	var mean = d3.mean(data, d => d.value);
 	var median = d3.median(data, d => d.value);
@@ -141,7 +148,8 @@ function getStats(datum) {
 } 
 function createGraph(datum) {
 
-	var data = d3.entries(datum);
+	var data = datum[0];
+	var links = datum[1];
 	console.log(data);
 	//var data = d3.entries([1,2,3,4,5,6,7,8,9,10]);
 
@@ -150,13 +158,10 @@ function createGraph(datum) {
 		.attr("width", "1000")
 		.attr("height", "1000");
 
-
-
 	var svg = d3.select("svg"),
 	    width = svg.attr("width"),
 	    height = svg.attr("height");
 
-	console.log(svg.attr("width"));
 	var color = d3.scaleOrdinal(d3.schemeCategory20);
 
 	var simulation = d3.forceSimulation()
@@ -164,13 +169,12 @@ function createGraph(datum) {
 	    .force("charge", d3.forceManyBody())
 	    .force("center", d3.forceCenter(width / 2, height / 2));
 
-
-	  // var link = svg.append("g")
-	  //     .attr("class", "links")
-	  //   .selectAll("line")
-	  //   .data(data)
-	  //   .enter().append("line")
-	  //     .attr("stroke-width", 1);
+	  var link = svg.append("g")
+	      .attr("class", "links")
+	    .selectAll("line")
+	    .data(links)
+	    .enter().append("line")
+	      .attr("stroke-width", 1);
 
 	  var node = svg.append("g")
 	      .attr("class", "nodes")
@@ -188,26 +192,26 @@ function createGraph(datum) {
 	          .on("end", dragended));
 
 	  var labels = node.append("text")
-	      .text((d) => d.value.name)
+	      .text((d) => d.id)
 	      .attr('x', 6)
 	      .attr('y', 3);
 
 	  node.append("title")
-	      .text(function(d) { return d.value.name; });
+	      .text(function(d) { return d.id; });
 
 	  simulation
 	      .nodes(data)
 	      .on("tick", ticked);
 
-	  // simulation.force("link")
-	  //     .links(graph.links);
+	  simulation.force("link")
+	      .links(links);
 
 	  function ticked() {
-	    // link
-	    //     .attr("x1", function(d) { return d.source.x; })
-	    //     .attr("y1", function(d) { return d.source.y; })
-	    //     .attr("x2", function(d) { return d.target.x; })
-	    //     .attr("y2", function(d) { return d.target.y; });
+	    link
+	        .attr("x1", function(d) { return d.source.x; })
+	        .attr("y1", function(d) { return d.source.y; })
+	        .attr("x2", function(d) { return d.target.x; })
+	        .attr("y2", function(d) { return d.target.y; });
 
 	    node
 	        .attr("transform", function(d) {
