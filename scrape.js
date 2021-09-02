@@ -64,6 +64,7 @@ function getCourseInfo(data) {
 	let title = "";
 	let desc = "";
 	let courses = [];
+	let titles = [];
 	let links = [];
 	Array.from(data).forEach(function(d) {
 		title = d.getElementsByClassName("courseblocktitle")[0].outerText;
@@ -77,15 +78,28 @@ function getCourseInfo(data) {
 		course.desc = desc;
 		//console.log(desc.substring(desc.search("Prereq")).match(/\b\w+\s\d+\b/))
 		courses.push({"id": course.name, "group": 1});
+		titles.push(course.name);
 		var prereq = desc.substring(desc.search("Prereq")).match(/\w+\s\d+/);
 		if(prereq) {
-			links.push({source: prereq[0], target: course.name, value: 8 });
+			links.push({source: prereq[0], target: course.name, value: 1 });
 		}
 		//console.log(course.desc);
 	});
 	links.forEach(function(d) {
-		courses.map(e => console.log(e))
-	});
+
+		if(!(titles.includes(d.source))) {
+			titles.push[d.source];
+			courses.push({"id": d.source, "group": 1});
+		}
+		if(!(titles.includes(d.target))) {
+			titles.push[d.target];
+			courses.push({"id": d.source, "group": 1});
+		}
+
+	})
+
+	console.log();
+
 	return [courses, links];
 }
 
@@ -155,7 +169,7 @@ function createGraph(datum) {
 
 	d3.select("#graph")
 		.append("svg")
-		.attr("width", "1000")
+		.attr("width", "1200")
 		.attr("height", "1000");
 
 	var svg = d3.select("svg"),
@@ -165,7 +179,7 @@ function createGraph(datum) {
 	var color = d3.scaleOrdinal(d3.schemeCategory20);
 
 	var simulation = d3.forceSimulation()
-	    .force("link", d3.forceLink().id(function(d) { return d.key; }))
+	    .force("link", d3.forceLink().id(function(d) { return d.id; }))
 	    .force("charge", d3.forceManyBody())
 	    .force("center", d3.forceCenter(width / 2, height / 2));
 
