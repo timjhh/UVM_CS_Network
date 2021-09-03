@@ -120,7 +120,7 @@ function getCourseInfo(data) {
 
 		if(!(titles.includes(d.source))) {
 			titles.push[d.source];
-			courses.push({"id": d.source, "group": 2, "desc": "N/A"});
+			courses.push({"id": d.source, "group": 2, "desc": "N/A", ttl: d.source});
 		}
 		if(!(titles.includes(d.target))) {
 			titles.push[d.target];
@@ -192,6 +192,9 @@ function createGraph(datum) {
 
 	var data = datum[0];
 	var links = datum[1];
+	var width = 1200,
+	height = 600;
+
 
 	d3.select("#graph")
 		.append("svg")
@@ -271,7 +274,12 @@ function createGraph(datum) {
 
 	    node
 	        .attr("transform", function(d) {
-	          return "translate(" + d.x + "," + d.y + ")";
+	        	let r = 5;
+	        	// let x = d.x % width == d.x ? d.x : width % d.x;
+	        	// let y = d.y % height == d.y ? d.y : height % d.y;
+	         // 	return "translate(" + x + "," + y + ")";
+	         
+	         	return "translate(" + (d.x = Math.max(r, Math.min(width - r, d.x))) + "," + (d.y = Math.max(r, Math.min(height - r, d.y))) + ")";
 	        })
 	  }
 
