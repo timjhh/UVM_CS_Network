@@ -48,16 +48,11 @@ function parseHTML(data) {
 
 // Find all courseblock elements on page
 function getCourses(data) {
-	//data.forEach(d => console.log(d.id));
-
-	// ouch
-	//const coursecontainer = data.find(d => d.id =='page-content').children[1].children[1].children[5];
 
 	const courses = data.find(d => d.id =='page-content').getElementsByClassName("courseblock");
 
 	return courses;
     
-	//Array.from(courses).forEach(d => console.log(d));
 
 }
 function getCourseInfo(data) {
@@ -76,8 +71,7 @@ function getCourseInfo(data) {
 		course.name = title.match(/[^.]+/)[0];
 		course.credits = ttl[ttl.length-2];
 		course.desc = desc;
-		//console.log(desc.substring(desc.search("Prereq")).match(/\b\w+\s\d+\b/))
-		courses.push({"id": course.name, "group": 1});
+		courses.push({"id": course.name, "group": 1, "desc": course.desc});
 		titles.push(course.name);
 
 		// Find starting index of prerequisite, co-requisite and cross-listed courses
@@ -92,75 +86,33 @@ function getCourseInfo(data) {
 		// \d+ n-digit integer
 		var prereq = desc.substring(pr).match(/\w+\s\d+/);
 		
-
 		var idx = pr + 14; // 12 is the length of "prerequisite" + 2 for 'S:' 
-		console.log("ABCD" + pr)
-		if(prereq) {
-			console.log("pr " + pr + " prereq " + prereq.index);
-			
-		}
-
-		// What-To-Find? Pre-req(0), Co-req(1), Cross-listed(2)?
-		var wtf = 0;
 
 		while(prereq) {
 			
 			
-
-			if(prereq) {
-				// pr = pr - prereq.index;
-				// cr = cr - prereq.index;
-				// cl = cl - prereq.index;
-				
-			}
-
-			console.log("cl " + cl);
-			console.log("cr " + cr);
-			console.log("idx " + idx);
-
-			// // If co-requisite/cross-listed comes before next pre-req course found
-			// // Then switch what we are looking for
-			// if(cr < idx) {
-			// 	wtf = 1;
-			// } else if(cl < idx) {
-			// 	wtf = 2;
-			// }
-			
-			// // Add course to list of links for graph
-			// // Also append status, to show whether course is pr, cr, cl
-			// if(wtf == 0) {
-			// 	links.push({source: prereq[0], target: course.name, value: 1, status: wtf });
-			// } else if(wtf == 1) {
-			// 	links.push({source: prereq[0], target: course.name, value: 1, status: wtf });
-			// } else if(wtf == 2) {
-			// 	links.push({source: prereq[0], target: course.name, value: 4, status: wtf });
-			// }
-
-			// If co-requisite/cross-listed comes before next pre-req course found
-			// Then switch what we are looking for
-			if(cr < idx) {
-				wtf = 1;
-			} else if(cl < idx) {
-				wtf = 2;
-			}
-			
 			// Add course to list of links for graph
 			// Also append status, to show whether course is pr, cr, cl
-			if(cl < idx) {
+			if(cl < idx && cl != -1) {
 				links.push({source: prereq[0], target: course.name, value: 4, status: 2 });
-			} else if(cr < idx) {
+
+			} else if(cr < idx && cr != -1) {
 				links.push({source: prereq[0], target: course.name, value: 1, status: 1 });
-			} else {
+
+			} else { // We don't need to check for -1, because prereq wouldn't exist if it wasn't found
 				links.push({source: prereq[0], target: course.name, value: 1, status: 0 });
+
 			}
+
+			// Iterate working index to check progress
 			idx = idx + prereq.index + prereq[0].length;
-			console.log(prereq)
+
 			// Start at last known index and search for another course
 			prereq = prereq.input.substring(prereq[0].length + prereq.index).match(/\w+\s\d+/);
-			console.log(prereq)
-			console.log("____")
+
 		}
-	
+
+
 	});
 
 	// If prereq course is not in database, add to course list
@@ -168,11 +120,11 @@ function getCourseInfo(data) {
 
 		if(!(titles.includes(d.source))) {
 			titles.push[d.source];
-			courses.push({"id": d.source, "group": 2});
+			courses.push({"id": d.source, "group": 2, "desc": "N/A"});
 		}
 		if(!(titles.includes(d.target))) {
 			titles.push[d.target];
-			courses.push({"id": d.source, "group": 2});
+			courses.push({"id": d.source, "group": 2, "desc": "N/A"});
 		}
 
 	})
@@ -244,7 +196,8 @@ function createGraph(datum) {
 	d3.select("#graph")
 		.append("svg")
 		.attr("width", "1200")
-		.attr("height", "1000");
+		.attr("height", "600")
+		.style("border", "1px solid black");
 
 	var svg = d3.select("svg"),
 	    width = svg.attr("width"),
@@ -263,7 +216,6 @@ function createGraph(datum) {
 	    .data(links)
 	    .enter().append("line")
 	      .attr("class", function(d) {
-	      	console.log(d)
 	      	if(d.status == 1) {
 	      		return "cr"
 	      	} else if(d.status == 2) {
@@ -278,11 +230,18 @@ function createGraph(datum) {
 	    .selectAll("g")
 	    .data(data)
 	    .enter().append("g");
+		//.attr("class", d => console.log(d));
 	    
 	  var circles = node.append("circle")
-	      //.attr("r", (d) => Math.sqrt(d.key) * 30)
-	      .attr("r", (d) => 5)
+	      .attr("r", 5)
 	      .attr("fill", 'steelblue')
+	      .on("click", function(d) {
+	      	console.log(d)
+	      	d3.select("#ttl")
+	      		.text(d.id)
+	      	d3.select("#desc")
+	      		.text(d.desc)
+	      })
 	      .call(d3.drag()
 	          .on("start", dragstarted)
 	          .on("drag", dragged)
