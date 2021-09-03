@@ -71,7 +71,7 @@ function getCourseInfo(data) {
 		course.name = title.match(/[^.]+/)[0];
 		course.credits = ttl[ttl.length-2];
 		course.desc = desc;
-		courses.push({"id": course.name, "group": 1, "desc": course.desc});
+		courses.push({"id": course.name, "group": 1, "desc": course.desc, "ttl": title});
 		titles.push(course.name);
 
 		// Find starting index of prerequisite, co-requisite and cross-listed courses
@@ -238,7 +238,7 @@ function createGraph(datum) {
 	      .on("click", function(d) {
 	      	console.log(d)
 	      	d3.select("#ttl")
-	      		.text(d.id)
+	      		.text(d.ttl)
 	      	d3.select("#desc")
 	      		.text(d.desc)
 	      })
