@@ -71,14 +71,23 @@ function getCourseInfo(data) {
 		course.name = title.match(/[^.]+/)[0];
 		course.credits = ttl[ttl.length-2];
 		course.desc = desc;
-		courses.push({"id": course.name, "group": 1, "desc": course.desc, "ttl": title});
-		titles.push(course.name);
+
 
 		// Find starting index of prerequisite, co-requisite and cross-listed courses
 		var pr = desc.toLowerCase().search("prerequisite");
 		var cr = desc.toLowerCase().search("co-req");
 		var cl = desc.toLowerCase().search("cross-");
-		
+		var ip = desc.toLowerCase().search("instructor permission") > 0 ? "ip" : null;
+
+
+
+		courses.push({"id": course.name, "group": 1, "desc": course.desc, "ttl": title, "ip": ip});
+		titles.push(course.name);
+
+
+
+
+
 
 		// Find first occurrence of course number by searching for a word + space + number
 		// \w+ n-character word
@@ -233,13 +242,11 @@ function createGraph(datum) {
 	    .selectAll("g")
 	    .data(data)
 	    .enter().append("g");
-		//.attr("class", d => console.log(d));
 	    
 	  var circles = node.append("circle")
 	      .attr("r", 5)
-	      .attr("fill", 'steelblue')
+	      .attr("fill", d => d.ip ? 'red' : 'steelblue' )
 	      .on("click", function(d) {
-	      	console.log(d)
 	      	d3.select("#ttl")
 	      		.text(d.ttl)
 	      	d3.select("#desc")
