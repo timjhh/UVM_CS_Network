@@ -1,6 +1,5 @@
 
-const begin = "http://catalogue.uvm.edu/undergraduate/artsandsciences/computerscience/#courseinventory"
-
+const begin = "http://catalogue.uvm.edu/undergraduate/artsandsciences/computerscience/#courseinventory";
 
 function query() {
 	
@@ -59,26 +58,27 @@ function getCourseInfo(data) {
 	let title = "";
 	let desc = "";
 	let courses = [];
-	let titles = [];
 	let links = [];
+	let titles = [];
+
 	Array.from(data).forEach(function(d) {
 		title = d.getElementsByClassName("courseblocktitle")[0].outerText;
 		desc = d.getElementsByClassName("courseblockdesc")[0].outerText;
 		
 		let ttl = title.split(" ");
 		let course = {};
-		course.name = title.match(/[^.]+/)[0].toLowerCase();
+		course.name = title.match(/[^.]+/)[0].toUpperCase();
 		course.credits = ttl[ttl.length-2];
-		course.desc = desc.toLowerCase();
+		course.desc = desc.toUpperCase();
 
 
 		// Find starting index of prerequisite, co-requisite and cross-listed courses
-		var pr = course.desc.search("prerequisite");
-		var cr = course.desc.search("co-req");
-		var cl = course.desc.search("cross-");
-		var ip = course.desc.search("instructor permission") > 0 ? "ip" : null;
-		var skip = course.desc.search("recommended")
-		var noCred = course.desc.search("no credit if")
+		var pr = course.desc.search("PREREQUISITE");
+		var cr = course.desc.search("CO-REQ");
+		var cl = course.desc.search("CROSS-");
+		var ip = course.desc.search("INSTRUCTOR PERMISSION") > 0 ? "ip" : null;
+		var skip = course.desc.search("RECOMMENDED")
+		var noCred = course.desc.search("NO CREDIT IF");
 
 		courses.push({"id": course.name, "group": 1, "desc": course.desc, "ttl": title, "ip": ip});
 		titles.push(course.name);
@@ -87,38 +87,42 @@ function getCourseInfo(data) {
 		// \w+ n-character word
 		// \s space character
 		// \d+ n-digit integer
-		var prereq = desc.substring(pr).toLowerCase().match(/\w+\s\d+/);
+		var prereq = desc.substring(pr).toUpperCase().match(/\w+\s\d+/);
 		
 		// 12 is the length of "prerequisite" + 2 for 'S:' 
 		var idx = pr + 14;
 
 		while(prereq) {
 			
-			if(prereq[0].includes("or") && prev) {
-				console.log("includes or " + prereq[0]);
-				// If there are two prereqs, take the field of study and add it to secondary course
-				var name = prev.split(" ")[0];
-				var num = prereq[0].split(" ")[1];
-				var newName = name.toUpperCase() + " " + num;
-				titles.push[newName];
-				courses.push({"id": newName, "group": 2, "desc": "N/A", ttl: newName});
-			}
+
 
 
 			// Add course to list of links for graph
 			// Also append status, to show whether course is pr, cr, cl
 			if(cl < idx && cl != -1) {
 				links.push({source: prereq[0], target: course.name, value: 4, status: 2 });
-				//titles.push(prereq[0].toLowerCase());
 
 			} else if(cr < idx && cr != -1) {
 				links.push({source: prereq[0], target: course.name, value: 1, status: 1 });
-				//titles.push(prereq[0].toLowerCase());
 
+			} else if(noCred < idx && noCred != -1) {
+				// May not be good practice, but this is a case that must be accounted for
+				// This will skip any courses that no credit is awarded for
+				break;
 			} else { // We don't need to check for -1, because prereq wouldn't exist if it wasn't found
 				links.push({source: prereq[0], target: course.name, value: 1, status: 0 });
-				//titles.push(prereq[0]);
+			}
 
+			if(prereq[0].includes("OR") && prev) {
+				// If there are two prereqs, take the field of study and add it to secondary course
+				var name = prev.split(" ")[0];
+				var num = prereq[0].split(" ")[1];
+				var newName = name.toUpperCase() + " " + num;
+				if(!titles.includes(newName)) {
+					titles.push(newName);
+					courses.push({"id": newName, "group": 2, "desc": "N/A", ttl: newName});
+				}
+				
 			}
 
 			// Iterate working index to check progress
@@ -147,19 +151,21 @@ function getCourseInfo(data) {
 		// 	titles.push[d.source];
 		// 	courses.push({"id": course, "group": 2, "desc": "N/A", ttl: course});
 		// }
+
 		if(!(titles.includes(d.source))) {
-			titles.push[d.source];
+
+			titles.push(d.source);
 			courses.push({"id": d.source, "group": 2, "desc": "N/A", ttl: d.source});
 		}
 		if(!(titles.includes(d.target))) {
-			titles.push[d.target];
+			titles.push(d.target);
 			courses.push({"id": d.target, "group": 2, "desc": "N/A", ttl: d.target});
 		}
 
 		// Store course for one-course-lookback
 		var prev = d.source;
 	
-	})
+	});
 
 	return [courses, links];
 }
@@ -175,7 +181,7 @@ function getEpisodeTitles(data) {
 	
 	// Code for array-oriented approach
 	var titles = {};
-	var ttls = data.map(d => d.find('h1').text()).filter(d => d.toLowerCase().includes("episode")); // Find the episode description(usually the only h1 tag on the page)
+	var ttls = data.map(d => d.find('h1').text()).filter(d => d.toUpperCase().includes("episode")); // Find the episode description(usually the only h1 tag on the page)
 
 	ttls.forEach(function(d) {
 		var title = d.split("-");
