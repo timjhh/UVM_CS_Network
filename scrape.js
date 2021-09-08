@@ -69,19 +69,21 @@ function getCourseInfo(data) {
 		let course = {};
 		course.name = title.match(/[^.]+/)[0].toUpperCase();
 		course.credits = ttl[ttl.length-2];
-		course.desc = desc.toUpperCase();
-
+		course.desc = desc;
+		course.ttl = title;
+		course.alias = null;
 
 		// Find starting index of prerequisite, co-requisite and cross-listed courses
-		var pr = course.desc.search("PREREQUISITE");
-		var cr = course.desc.search("CO-REQ");
-		var cl = course.desc.search("CROSS-");
-		var ip = course.desc.search("INSTRUCTOR PERMISSION") > 0 ? "ip" : null;
-		var skip = course.desc.search("RECOMMENDED")
-		var noCred = course.desc.search("NO CREDIT IF");
+		var pr = course.desc.toUpperCase().search("PREREQUISITE");
+		var cr = course.desc.toUpperCase().search("CO-REQ");
+		var cl = course.desc.toUpperCase().search("CROSS-");
+		var ip = course.desc.toUpperCase().search("INSTRUCTOR PERMISSION") > 0 ? "ip" : null;
+		var skip = course.desc.toUpperCase().search("RECOMMENDED")
+		var noCred = course.desc.toUpperCase().search("NO CREDIT IF");
+		var group = 2;
 
-		courses.push({"id": course.name, "group": 1, "desc": course.desc, "ttl": title, "ip": ip});
-		titles.push(course.name);
+
+		course.ip = ip;
 
 		// Find first occurrence of course number by searching for a word + space + number
 		// \w+ n-character word
@@ -95,13 +97,11 @@ function getCourseInfo(data) {
 		while(prereq) {
 			
 
-
-
 			// Add course to list of links for graph
 			// Also append status, to show whether course is pr, cr, cl
 			if(cl < idx && cl != -1) {
-				links.push({source: prereq[0], target: course.name, value: 4, status: 2 });
-
+				//links.push({source: prereq[0], target: course.name, value: 4, status: 2 });
+				course.alias = prereq[0];
 			} else if(cr < idx && cr != -1) {
 				links.push({source: prereq[0], target: course.name, value: 1, status: 1 });
 
@@ -120,7 +120,7 @@ function getCourseInfo(data) {
 				var newName = name.toUpperCase() + " " + num;
 				if(!titles.includes(newName)) {
 					titles.push(newName);
-					courses.push({"id": newName, "group": 2, "desc": "N/A", ttl: newName});
+					courses.push({"name": newName, "group": 2, "desc": "N/A", ttl: newName});
 				}
 				
 			}
@@ -137,29 +137,25 @@ function getCourseInfo(data) {
 
 		}
 
+		// Finally, add course to listing
+		//courses.push({"name": course.name, "group": 1, "desc": course.desc, "ttl": title, "ip": ip});
+		courses.push(course);
+		titles.push(course.name);
 
 	});
 
 	// If prereq course is not in database, add to course list
 	links.forEach(function(d) {
-		// if(d.source.includes("or") && prev) {
-		// 	console.log("includes or " + d.source);
-		// 	// If there are two prereqs, take the field of study and add it to secondary course
-		// 	var name = prev.split(" ")[0];
-		// 	var num = d.source.split(" ")[1];
-		// 	var course = name.toUpperCase() + " " + num;
-		// 	titles.push[d.source];
-		// 	courses.push({"id": course, "group": 2, "desc": "N/A", ttl: course});
-		// }
+
 
 		if(!(titles.includes(d.source))) {
 
 			titles.push(d.source);
-			courses.push({"id": d.source, "group": 2, "desc": "N/A", ttl: d.source});
+			courses.push({"name": d.source, "group": 2, "desc": "N/A", ttl: d.source});
 		}
 		if(!(titles.includes(d.target))) {
 			titles.push(d.target);
-			courses.push({"id": d.target, "group": 2, "desc": "N/A", ttl: d.target});
+			courses.push({"name": d.target, "group": 2, "desc": "N/A", ttl: d.target});
 		}
 
 		// Store course for one-course-lookback
@@ -174,27 +170,7 @@ function sanitize(data) {
 
 }
 
-// Gets all episode titles from an HTML webpage object
-// data MUST be in the form of an HTML webpage object
-// Returns a dictionary in the format of episode # -> description
-function getEpisodeTitles(data) {
-	
-	// Code for array-oriented approach
-	var titles = {};
-	var ttls = data.map(d => d.find('h1').text()).filter(d => d.toUpperCase().includes("episode")); // Find the episode description(usually the only h1 tag on the page)
 
-	ttls.forEach(function(d) {
-		var title = d.split("-");
-		var description = title.slice(1).join("").trim(); // Include some titles with extra hyphens in their description, trim the whitespace too!
-		if(description.length < 100 && description != "") { // Filters out ??? big descriptions ??? just don't take it out
-		 titles[parseInt(title[0].match(/[1-9]\d*|0\d+/g)[0])] = description; // index a regex matching of all numbers followed by the description
-		}
-		
-	});
-	
-	
-	return titles;
-}
 
 /*
 	Takes an unordered dictionary, changes it to a d3.entries() array, sorts by(guaranteed numerical) value and returns it
@@ -247,7 +223,7 @@ function createGraph(datum) {
 	var color = d3.scaleOrdinal(d3.schemeCategory20);
 
 	var simulation = d3.forceSimulation()
-	    .force("link", d3.forceLink().id(function(d) { return d.id; }))
+	    .force("link", d3.forceLink().id(function(d) { return d.name; }))
 	    .force("charge", d3.forceManyBody())
 	    .force("center", d3.forceCenter(width / 2, height / 2));
 
@@ -279,7 +255,7 @@ function createGraph(datum) {
 	      .attr("fill", d => d.ip ? 'red' : 'steelblue' )
 	      .on("click", function(d) {
 	      	d3.select("#ttl")
-	      		.text(d.ttl)
+	      		.text((d.alias ? d.alias+"/" : "") + " " + d.ttl)
 	      	d3.select("#desc")
 	      		.text(d.desc)
 	      })
@@ -289,18 +265,18 @@ function createGraph(datum) {
 	          .on("end", dragended));
 
 	  var labels = node.append("text")
-	      .text((d) => d.id.toUpperCase())
+	      .text((d) => d.name.toUpperCase())
 	      .attr('x', 6)
 	      .on("click", function(d) {
 	      	d3.select("#ttl")
-	      		.text(d.ttl)
+	      		.text((d.alias ? d.alias+"/" : "") + " " + d.ttl)
 	      	d3.select("#desc")
 	      		.text(d.desc)
 	      })
 	      .attr('y', 3);
 
 	  node.append("title")
-	      .text(function(d) { return d.id; });
+	      .text(function(d) { return d.id });
 
 	  simulation
 	      .nodes(data)
