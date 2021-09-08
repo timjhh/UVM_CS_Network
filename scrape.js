@@ -67,7 +67,6 @@ function getCourseInfo(data) {
 		
 		let ttl = title.split(" ");
 		let course = {};
-		//course.num = ttl[0].match(/[0-9]+/)[0];
 		course.name = title.match(/[^.]+/)[0];
 		course.credits = ttl[ttl.length-2];
 		course.desc = desc;
@@ -78,28 +77,35 @@ function getCourseInfo(data) {
 		var cr = desc.toLowerCase().search("co-req");
 		var cl = desc.toLowerCase().search("cross-");
 		var ip = desc.toLowerCase().search("instructor permission") > 0 ? "ip" : null;
-
+		var skip = desc.toLowerCase().search("recommended")
 
 
 		courses.push({"id": course.name, "group": 1, "desc": course.desc, "ttl": title, "ip": ip});
 		titles.push(course.name);
 
-
-
-
-
-
 		// Find first occurrence of course number by searching for a word + space + number
 		// \w+ n-character word
 		// \s space character
 		// \d+ n-digit integer
-		var prereq = desc.substring(pr).match(/\w+\s\d+/);
+		var newStr = desc.substring(pr).toLowerCase();
+		var prereq = newStr.match(/\w+\s\d+/);
 		
 		var idx = pr + 14; // 12 is the length of "prerequisite" + 2 for 'S:' 
 
 		while(prereq) {
 			
 			
+			// var logical = prereq.input.search("and");
+			// if(logical != -1 && logical < prereq.index) {
+			// 	continue;
+			// }
+			// // If there are two equal prerequisites that may be valid, apply special class
+			// var foundOr = (logical < prereq.index) &&(prereq.input.search("or") != -1) || (prereq[0].toLowerCase().includes("or"));
+			// if(foundOr) {
+			// 	links.push({source: prereq[0], target: course.name, value: 1, status: 3 });
+			// 	continue;
+			// }
+
 			// Add course to list of links for graph
 			// Also append status, to show whether course is pr, cr, cl
 			if(cl < idx && cl != -1) {
@@ -126,16 +132,28 @@ function getCourseInfo(data) {
 
 	// If prereq course is not in database, add to course list
 	links.forEach(function(d) {
-
+		console.log(d.source)
+		if(d.source.includes("or") && prev) {
+			console.log("includes or " + d.source);
+			// If there are two prereqs, take the field of study and add it to secondary course
+			var name = prev.split(" ")[0];
+			var num = d.source.split(" ")[1];
+			var course = name.toUpperCase() + " " + num;
+			titles.push[d.source];
+			courses.push({"id": course, "group": 2, "desc": "N/A", ttl: course});
+		}
 		if(!(titles.includes(d.source))) {
 			titles.push[d.source];
 			courses.push({"id": d.source, "group": 2, "desc": "N/A", ttl: d.source});
 		}
 		if(!(titles.includes(d.target))) {
 			titles.push[d.target];
-			courses.push({"id": d.source, "group": 2, "desc": "N/A"});
+			courses.push({"id": d.source, "group": 2, "desc": "N/A", ttl: d.source});
 		}
 
+		// Store course for one-course-lookback
+		var prev = d.source;
+	
 	})
 
 	return [courses, links];
@@ -232,6 +250,8 @@ function createGraph(datum) {
 	      		return "cr"
 	      	} else if(d.status == 2) {
 	      		return "cl"
+	      	} else if(d.status == 3) {
+	      		return "or"
 	      	}
 	      	return "ln";
 	      })
@@ -260,6 +280,12 @@ function createGraph(datum) {
 	  var labels = node.append("text")
 	      .text((d) => d.id.toUpperCase())
 	      .attr('x', 6)
+	      .on("click", function(d) {
+	      	d3.select("#ttl")
+	      		.text(d.ttl)
+	      	d3.select("#desc")
+	      		.text(d.desc)
+	      })
 	      .attr('y', 3);
 
 	  node.append("title")
