@@ -67,18 +67,18 @@ function getCourseInfo(data) {
 		
 		let ttl = title.split(" ");
 		let course = {};
-		course.name = title.match(/[^.]+/)[0];
+		course.name = title.match(/[^.]+/)[0].toLowerCase();
 		course.credits = ttl[ttl.length-2];
-		course.desc = desc;
+		course.desc = desc.toLowerCase();
 
 
 		// Find starting index of prerequisite, co-requisite and cross-listed courses
-		var pr = desc.toLowerCase().search("prerequisite");
-		var cr = desc.toLowerCase().search("co-req");
-		var cl = desc.toLowerCase().search("cross-");
-		var ip = desc.toLowerCase().search("instructor permission") > 0 ? "ip" : null;
-		var skip = desc.toLowerCase().search("recommended")
-
+		var pr = course.desc.search("prerequisite");
+		var cr = course.desc.search("co-req");
+		var cl = course.desc.search("cross-");
+		var ip = course.desc.search("instructor permission") > 0 ? "ip" : null;
+		var skip = course.desc.search("recommended")
+		var noCred = course.desc.search("no credit if")
 
 		courses.push({"id": course.name, "group": 1, "desc": course.desc, "ttl": title, "ip": ip});
 		titles.push(course.name);
@@ -87,40 +87,46 @@ function getCourseInfo(data) {
 		// \w+ n-character word
 		// \s space character
 		// \d+ n-digit integer
-		var newStr = desc.substring(pr).toLowerCase();
-		var prereq = newStr.match(/\w+\s\d+/);
+		var prereq = desc.substring(pr).toLowerCase().match(/\w+\s\d+/);
 		
-		var idx = pr + 14; // 12 is the length of "prerequisite" + 2 for 'S:' 
+		// 12 is the length of "prerequisite" + 2 for 'S:' 
+		var idx = pr + 14;
 
 		while(prereq) {
 			
-			
-			// var logical = prereq.input.search("and");
-			// if(logical != -1 && logical < prereq.index) {
-			// 	continue;
-			// }
-			// // If there are two equal prerequisites that may be valid, apply special class
-			// var foundOr = (logical < prereq.index) &&(prereq.input.search("or") != -1) || (prereq[0].toLowerCase().includes("or"));
-			// if(foundOr) {
-			// 	links.push({source: prereq[0], target: course.name, value: 1, status: 3 });
-			// 	continue;
-			// }
+			if(prereq[0].includes("or") && prev) {
+				console.log("includes or " + prereq[0]);
+				// If there are two prereqs, take the field of study and add it to secondary course
+				var name = prev.split(" ")[0];
+				var num = prereq[0].split(" ")[1];
+				var newName = name.toUpperCase() + " " + num;
+				titles.push[newName];
+				courses.push({"id": newName, "group": 2, "desc": "N/A", ttl: newName});
+			}
+
 
 			// Add course to list of links for graph
 			// Also append status, to show whether course is pr, cr, cl
 			if(cl < idx && cl != -1) {
 				links.push({source: prereq[0], target: course.name, value: 4, status: 2 });
+				//titles.push(prereq[0].toLowerCase());
 
 			} else if(cr < idx && cr != -1) {
 				links.push({source: prereq[0], target: course.name, value: 1, status: 1 });
+				//titles.push(prereq[0].toLowerCase());
 
 			} else { // We don't need to check for -1, because prereq wouldn't exist if it wasn't found
 				links.push({source: prereq[0], target: course.name, value: 1, status: 0 });
+				//titles.push(prereq[0]);
 
 			}
 
 			// Iterate working index to check progress
 			idx = idx + prereq.index + prereq[0].length;
+
+			// Define the now previous course for a one-course-lookback
+			var prev = prereq[0];
+
 
 			// Start at last known index and search for another course
 			prereq = prereq.input.substring(prereq[0].length + prereq.index).match(/\w+\s\d+/);
@@ -132,23 +138,22 @@ function getCourseInfo(data) {
 
 	// If prereq course is not in database, add to course list
 	links.forEach(function(d) {
-		console.log(d.source)
-		if(d.source.includes("or") && prev) {
-			console.log("includes or " + d.source);
-			// If there are two prereqs, take the field of study and add it to secondary course
-			var name = prev.split(" ")[0];
-			var num = d.source.split(" ")[1];
-			var course = name.toUpperCase() + " " + num;
-			titles.push[d.source];
-			courses.push({"id": course, "group": 2, "desc": "N/A", ttl: course});
-		}
+		// if(d.source.includes("or") && prev) {
+		// 	console.log("includes or " + d.source);
+		// 	// If there are two prereqs, take the field of study and add it to secondary course
+		// 	var name = prev.split(" ")[0];
+		// 	var num = d.source.split(" ")[1];
+		// 	var course = name.toUpperCase() + " " + num;
+		// 	titles.push[d.source];
+		// 	courses.push({"id": course, "group": 2, "desc": "N/A", ttl: course});
+		// }
 		if(!(titles.includes(d.source))) {
 			titles.push[d.source];
 			courses.push({"id": d.source, "group": 2, "desc": "N/A", ttl: d.source});
 		}
 		if(!(titles.includes(d.target))) {
 			titles.push[d.target];
-			courses.push({"id": d.source, "group": 2, "desc": "N/A", ttl: d.source});
+			courses.push({"id": d.target, "group": 2, "desc": "N/A", ttl: d.target});
 		}
 
 		// Store course for one-course-lookback
