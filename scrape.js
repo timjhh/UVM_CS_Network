@@ -76,7 +76,7 @@ function getCourseInfo(data) {
 		// Find starting index of prerequisite, co-requisite and cross-listed courses
 		var pr = course.desc.toUpperCase().search("PREREQUISITE");
 		var cr = course.desc.toUpperCase().search("CO-REQ");
-		var cl = course.desc.toUpperCase().search("CROSS-");
+		var cl = course.desc.toUpperCase().search("CROSS-LISTED");
 		var ip = course.desc.toUpperCase().search("INSTRUCTOR PERMISSION") > 0 ? "ip" : null;
 		var skip = course.desc.toUpperCase().search("RECOMMENDED")
 		var noCred = course.desc.toUpperCase().search("NO CREDIT IF");
@@ -99,7 +99,9 @@ function getCourseInfo(data) {
 
 			// Add course to list of links for graph
 			// Also append status, to show whether course is pr, cr, cl
+
 			if(cl < idx && cl != -1) {
+
 				//links.push({source: prereq[0], target: course.name, value: 4, status: 2 });
 				course.alias = prereq[0];
 			} else if(cr < idx && cr != -1) {
@@ -227,22 +229,45 @@ function createGraph(datum) {
 	    .force("charge", d3.forceManyBody())
 	    .force("center", d3.forceCenter(width / 2, height / 2));
 
-	  var link = svg.append("g")
-	      .attr("class", "links")
-	    .selectAll("line")
+	  // var link = svg.append("g")
+	  //     .attr("class", "links")
+	  //   .selectAll("line")
+	  //   .data(links)
+	  //   .enter().append("line")
+	  //     .attr("class", function(d) {
+	  //     	if(d.status == 1) {
+	  //     		return "cr"
+	  //     	} else if(d.status == 2) {
+	  //     		return "cl"
+	  //     	} else if(d.status == 3) {
+	  //     		return "or"
+	  //     	}
+	  //     	return "ln";
+	  //     })
+	  //     .attr("stroke-width", 1);
+
+	// build the arrow.
+	svg.append("svg:defs").selectAll("marker")
+	    .data(["end"])      // Different link/path types can be defined here
+	  .enter().append("svg:marker")    // This section adds in the arrows
+	    .attr("id", String)
+	    .attr("viewBox", "0 -5 10 10")
+	    .attr("refX", 15)
+	    .attr("refY", -1.5)
+	    .attr("markerWidth", 6)
+	    .attr("markerHeight", 6)
+	    .attr("orient", "auto")
+	  .append("svg:path")
+	    .attr("d", "M0,-5L10,0L0,5");
+
+	// add the links and the arrows
+	var path = svg.append("svg:g").selectAll("path")
 	    .data(links)
-	    .enter().append("line")
-	      .attr("class", function(d) {
-	      	if(d.status == 1) {
-	      		return "cr"
-	      	} else if(d.status == 2) {
-	      		return "cl"
-	      	} else if(d.status == 3) {
-	      		return "or"
-	      	}
-	      	return "ln";
-	      })
-	      .attr("stroke-width", 1);
+	  .enter().append("svg:path")
+	//    .attr("class", function(d) { return "link " + d.type; })
+	    .attr("class", "link")
+	    .attr("marker-end", "url(#end)");
+
 
 	  var node = svg.append("g")
 	      .attr("class", "nodes")
@@ -286,11 +311,24 @@ function createGraph(datum) {
 	      .links(links);
 
 	  function ticked() {
-	    link
-	        .attr("x1", function(d) { return d.source.x; })
-	        .attr("y1", function(d) { return d.source.y; })
-	        .attr("x2", function(d) { return d.target.x; })
-	        .attr("y2", function(d) { return d.target.y; });
+
+	    path.attr("d", function(d) {
+	        var dx = d.target.x - d.source.x,
+	            dy = d.target.y - d.source.y,
+	            dr = Math.sqrt(dx * dx + dy * dy);
+	        return "M" + 
+	            d.source.x + "," + 
+	            d.source.y + "A" + 
+	            dr + "," + dr + " 0 0,1 " + 
+	            d.target.x + "," + 
+	            d.target.y;
+	    });
+    
+	    // link
+	    //     .attr("x1", function(d) { return d.source.x; })
+	    //     .attr("y1", function(d) { return d.source.y; })
+	    //     .attr("x2", function(d) { return d.target.x; })
+	    //     .attr("y2", function(d) { return d.target.y; });
 
 	    node
 	        .attr("transform", function(d) {

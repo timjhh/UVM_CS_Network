@@ -7,7 +7,11 @@ html {
 body {
   min-height: 100%;
 }
-
+path.link {
+  fill: none;
+  stroke: #666;
+  stroke-width: 1.5px;
+}
 .nodes circle {
   stroke: #fff;
   stroke-width: 1.5px;
