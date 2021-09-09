@@ -246,27 +246,27 @@ function createGraph(datum) {
 	  //     })
 	  //     .attr("stroke-width", 1);
 
-	// build the arrow.
-	svg.append("svg:defs").selectAll("marker")
-	    .data(["end"])      // Different link/path types can be defined here
-	  .enter().append("svg:marker")    // This section adds in the arrows
-	    .attr("id", String)
-	    .attr("viewBox", "0 -5 10 10")
-	    .attr("refX", 15)
-	    .attr("refY", -1.5)
-	    .attr("markerWidth", 6)
-	    .attr("markerHeight", 6)
-	    .attr("orient", "auto")
-	  .append("svg:path")
-	    .attr("d", "M0,-5L10,0L0,5");
+// build the arrow.
+svg.append("svg:defs").selectAll("marker")
+    .data(["end"])      // Different link/path types can be defined here
+  .enter().append("svg:marker")    // This section adds in the arrows
+    .attr("id", String)
+    .attr("viewBox", "0 -5 10 10")
+    .attr("refX", 15)
+    .attr("refY", -1.5)
+    .attr("markerWidth", 6)
+    .attr("markerHeight", 6)
+    .attr("orient", "auto")
+  .append("svg:path")
+    .attr("d", "M0,-5L10,0L0,5");
 
-	// add the links and the arrows
-	var path = svg.append("svg:g").selectAll("path")
-	    .data(links)
-	  .enter().append("svg:path")
-	//    .attr("class", function(d) { return "link " + d.type; })
-	    .attr("class", "link")
-	    .attr("marker-end", "url(#end)");
+// add the links and the arrows
+var path = svg.append("svg:g").selectAll("path")
+    .data(links)
+  .enter().append("svg:path")
+//    .attr("class", function(d) { return "link " + d.type; })
+    .attr("class", "link")
+    .attr("marker-end", "url(#end)");
 
 
 	  var node = svg.append("g")
@@ -323,7 +323,7 @@ function createGraph(datum) {
 	            d.target.x + "," + 
 	            d.target.y;
 	    });
-    
+
 	    // link
 	    //     .attr("x1", function(d) { return d.source.x; })
 	    //     .attr("y1", function(d) { return d.source.y; })
