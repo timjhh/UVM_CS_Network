@@ -16,9 +16,7 @@ path.link {
   stroke: #fff;
   stroke-width: 1.5px;
 }
-p {
-  white-space: pre-line;
-}
+
 * {
   font-family: 'Roboto', sans-serif;
 }
