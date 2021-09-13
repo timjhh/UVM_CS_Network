@@ -300,6 +300,12 @@ var path = svg.append("svg:g").selectAll("path")
 	      })
 	      .attr('y', 3);
 
+	  var legend = svg.append("g")
+	      .attr('transform', 'translate(' + parseFloat(width-150) + ',' + '50)')
+	  	  .style("border", "1px solid black")
+	  	  .append("text")
+	      .text("Filter by:");
+
 	  node.append("title")
 	      .text(function(d) { return d.id });
 
@@ -357,30 +363,4 @@ var path = svg.append("svg:g").selectAll("path")
 	  d.fx = null;
 	  d.fy = null;
 	}
-
-
-
-	// Rectangles
-	// svg.selectAll("myRect")
-	//   .data(data)
-	//   .enter()
-	//   .append("rect")
-	//   .attr("x", 0 )
-	//   .attr("y", function(d) { return y(d.key); })
-	//   .attr("width", function(d) { return ((d.value * width) / max); })
-	//   .attr("height", y.bandwidth() )
-	//   .attr("fill", function(d) { return d.key.charCodeAt(0) % 2 ? "#64727b" : "#28363f" })
-	//   .on("mouseover", function(d) {
-	//   	tooltip.transition()
-	//   	.duration(200)
-	//   	.style("opacity", .9);
-	//   	tooltip.html("Word: " + d.key + "<br/>" + "Uses: " + d.value)
-	//   	.style("left", (d3.event.pageX) + "px")
-	//   	.style("top", (d3.event.pageY - 28) + "px");
-	//   }) 
-	//   .on("mouseout", function(d) {
-	//   	tooltip.transition()
-	//   	.duration(500)
-	//   	.style("opacity", 0);
-	//   });
 }

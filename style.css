@@ -9,7 +9,7 @@ body {
 }
 path.link {
   fill: none;
-  stroke: #666;
+  stroke: gray;
   stroke-width: 1.5px;
 }
 .nodes circle {
