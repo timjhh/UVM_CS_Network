@@ -218,23 +218,11 @@ function createGraph(datum) {
 
 	// Node circle radius
 	var radius = 5;
-	var levels = ["0XX", "1XX", "2XX", "3XX"];
-	//let magmaClr = (d) => d3.interpolateMagma( parseFloat( parseFloat((d.split(" ")[1][0])) / 4 ));
-	function magmaClr(d) {
-		try {
-			console.log(d);
-			let num = d.match(/\d/);
-			if(!num) num = 0;
-			return d3.interpolateMagma( parseInt(num) / 4 )
-		} catch(e) {
-			//console.log(d.match("/\d/"));
-			console.log(e);
-		}
-		
-	}
 
-	// var colors = d3.scaleSequential().domain(levels)
-	//    d3.interpolateMagma(t);
+	// Define legend levels and coloring for the graph
+	var levels = ["0XX", "1XX", "2XX", "3XX"];
+	let magmaClr = (d) => d3.interpolateMagma( parseInt(d.match(/\d/)) / 4 );
+
 
 	d3.select("#graph")
 		.append("svg")
@@ -246,52 +234,49 @@ function createGraph(datum) {
 	    width = svg.attr("width"),
 	    height = svg.attr("height");
 
-	var color = d3.scaleOrdinal(d3.schemeCategory20);
-	//https://observablehq.com/@d3/color-schemes#Magma
-
 	var simulation = d3.forceSimulation()
-	    .force("link", d3.forceLink().id(function(d) { return d.name; }))
+	    .force("link", d3.forceLink().id(function(d) { return d.name; }).strength(0.1))
 	    .force("charge", d3.forceManyBody())
 	    .force("center", d3.forceCenter(width / 2, height / 2));
 
-	  // var link = svg.append("g")
-	  //     .attr("class", "links")
-	  //   .selectAll("line")
-	  //   .data(links)
-	  //   .enter().append("line")
-	  //     .attr("class", function(d) {
-	  //     	if(d.status == 1) {
-	  //     		return "cr"
-	  //     	} else if(d.status == 2) {
-	  //     		return "cl"
-	  //     	} else if(d.status == 3) {
-	  //     		return "or"
-	  //     	}
-	  //     	return "ln";
-	  //     })
-	  //     .attr("stroke-width", 1);
+	  var link = svg.append("g")
+	      .attr("class", "links")
+	    .selectAll("line")
+	    .data(links)
+	    .enter().append("line")
+	      .attr("class", function(d) {
+	      	if(d.status == 1) {
+	      		return "cr"
+	      	} else if(d.status == 2) {
+	      		return "cl"
+	      	} else if(d.status == 3) {
+	      		return "or"
+	      	}
+	      	return "ln";
+	      })
+	      .attr("stroke-width", 1);
 
-// build the arrow.
-svg.append("svg:defs").selectAll("marker")
-    .data(["end"])      // Different link/path types can be defined here
-  .enter().append("svg:marker")    // This section adds in the arrows
-    .attr("id", String)
-    .attr("viewBox", "0 -5 10 10")
-    .attr("refX", 15)
-    .attr("refY", -1.5)
-    .attr("markerWidth", 6)
-    .attr("markerHeight", 6)
-    .attr("orient", "auto")
-  .append("svg:path")
-    .attr("d", "M0,-5L10,0L0,5");
+	// build the arrow.
+	// svg.append("svg:defs").selectAll("marker")
+	//     .data(["end"])      // Different link/path types can be defined here
+	//   .enter().append("svg:marker")    // This section adds in the arrows
+	//     .attr("id", String)
+	//     .attr("viewBox", "0 -5 10 10")
+	//     .attr("refX", 15)
+	//     .attr("refY", -1.5)
+	//     .attr("markerWidth", 6)
+	//     .attr("markerHeight", 6)
+	//     .attr("orient", "auto")
+	//   .append("svg:path")
+	//     .attr("d", "M0,-5L10,0L0,5");
 
-// add the links and the arrows
-var path = svg.append("svg:g").selectAll("path")
-    .data(links)
-  .enter().append("svg:path")
-//    .attr("class", function(d) { return "link " + d.type; })
-    .attr("class", "link")
-    .attr("marker-end", "url(#end)");
+	// add the links and the arrows
+	// var path = svg.append("svg:g").selectAll("path")
+	//     .data(links)
+	//   .enter().append("svg:path")
+	// //    .attr("class", function(d) { return "link " + d.type; })
+	//     .attr("class", "link")
+	//     .attr("marker-end", "url(#end)");
 
 
 	  var node = svg.append("g")
@@ -302,8 +287,8 @@ var path = svg.append("svg:g").selectAll("path")
 	    
 	  var circles = node.append("circle")
 	      .attr("r", radius)
-	      //.attr("fill", d => d.ip ? 'red' : 'steelblue' )
 	      .attr("fill", d =>  magmaClr(d.name))
+	      //.style("stroke", d => d.ip ? '2px solid green' : '' )
 	      .on("click", function(d) {
 	      	d3.select("#ttl")
 	      		.text((d.alias ? d.alias+"/" : "") + " " + d.ttl)
@@ -318,6 +303,7 @@ var path = svg.append("svg:g").selectAll("path")
 	  var labels = node.append("text")
 	      .text((d) => d.name.toUpperCase())
 	      .attr('x', 6)
+	      .style("cursor", "pointer")
 	      .on("click", function(d) {
 	      	d3.select("#ttl")
 	      		.text((d.alias ? d.alias+"/" : "") + " " + d.ttl)
@@ -327,17 +313,23 @@ var path = svg.append("svg:g").selectAll("path")
 	      .attr('y', 3);
 
 
-
 	  // Build physical legend component and styling
 	  var legend = svg.append("g")
 	  	  .style("border", "1px solid black")
-	  	  .style("color", "red")
 	      .attr('transform', 'translate(' + parseFloat(width-150) + ',' + '50)');
 
+	  // Append search bar to legend area
+	  legend.append("input")
+	  .text("abcd")
+	  .attr("transform", "translate(-20,-25)");
+
+
+
 	  // Append title to legend
-	  legend.append("h3")
-	  	.text("Legend")
-	  	.attr("transform", "translate(0,0)");
+	  legend.append("text")
+	  	.attr("font-weight", "bold")
+	  	.text("Class Level")
+	  	.attr("transform", "translate(-20,-15)");
 
 	  // Build legend by appending labels
 	  levels.map(function(d, idx) {
@@ -350,7 +342,6 @@ var path = svg.append("svg:g").selectAll("path")
 		  legend.append("text")
 		      .text(d)
 		      .attr("transform", "translate(" + radius*2 + "," + ((idx*radius*3)+radius) + ")");
-
 	  });
 
 
@@ -366,23 +357,23 @@ var path = svg.append("svg:g").selectAll("path")
 
 	  function ticked() {
 
-	    path.attr("d", function(d) {
-	        var dx = d.target.x - d.source.x,
-	            dy = d.target.y - d.source.y,
-	            dr = Math.sqrt(dx * dx + dy * dy);
-	        return "M" + 
-	            d.source.x + "," + 
-	            d.source.y + "A" + 
-	            dr + "," + dr + " 0 0,1 " + 
-	            d.target.x + "," + 
-	            d.target.y;
-	    });
+	    // path.attr("d", function(d) {
+	    //     var dx = d.target.x - d.source.x,
+	    //         dy = d.target.y - d.source.y,
+	    //         dr = Math.sqrt(dx * dx + dy * dy);
+	    //     return "M" + 
+	    //         d.source.x + "," + 
+	    //         d.source.y + "A" + 
+	    //         dr + "," + dr + " 0 0,1 " + 
+	    //         d.target.x + "," + 
+	    //         d.target.y;
+	    // });
 
-	    // link
-	    //     .attr("x1", function(d) { return d.source.x; })
-	    //     .attr("y1", function(d) { return d.source.y; })
-	    //     .attr("x2", function(d) { return d.target.x; })
-	    //     .attr("y2", function(d) { return d.target.y; });
+	    link
+	        .attr("x1", function(d) { return d.source.x; })
+	        .attr("y1", function(d) { return d.source.y; })
+	        .attr("x2", function(d) { return d.target.x; })
+	        .attr("y2", function(d) { return d.target.y; });
 
 	    node
 	        .attr("transform", function(d) {
