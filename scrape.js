@@ -223,10 +223,9 @@ function createGraph(datum) {
 	function magmaClr(d) {
 		try {
 			console.log(d);
-			//let num = d.split(" ")[1][0];
-			let num = d.match("/\d/");
-			console.log(num);
-			return d3.interpolateMagma( parseFloat( parseFloat(num) / 4 ))
+			let num = d.match(/\d/);
+			if(!num) num = 0;
+			return d3.interpolateMagma( parseInt(num) / 4 )
 		} catch(e) {
 			//console.log(d.match("/\d/"));
 			console.log(e);
@@ -304,7 +303,7 @@ var path = svg.append("svg:g").selectAll("path")
 	  var circles = node.append("circle")
 	      .attr("r", radius)
 	      //.attr("fill", d => d.ip ? 'red' : 'steelblue' )
-	      .attr("fill", d =>  d.name : magmaClr(d.name))
+	      .attr("fill", d =>  magmaClr(d.name))
 	      .on("click", function(d) {
 	      	d3.select("#ttl")
 	      		.text((d.alias ? d.alias+"/" : "") + " " + d.ttl)
@@ -327,12 +326,20 @@ var path = svg.append("svg:g").selectAll("path")
 	      })
 	      .attr('y', 3);
 
+
+
+	  // Build physical legend component and styling
 	  var legend = svg.append("g")
 	  	  .style("border", "1px solid black")
+	  	  .style("color", "red")
 	      .attr('transform', 'translate(' + parseFloat(width-150) + ',' + '50)');
 
+	  // Append title to legend
+	  legend.append("h3")
+	  	.text("Legend")
+	  	.attr("transform", "translate(0,0)");
 
-	     
+	  // Build legend by appending labels
 	  levels.map(function(d, idx) {
 
 		  legend.append("circle")
