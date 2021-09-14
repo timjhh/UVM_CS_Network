@@ -1,4 +1,8 @@
 
+
+
+
+
 const begin = "http://catalogue.uvm.edu/undergraduate/artsandsciences/computerscience/#courseinventory";
 
 function query() {
@@ -212,6 +216,27 @@ function createGraph(datum) {
 	height = 600;
 
 
+	// Node circle radius
+	var radius = 5;
+	var levels = ["0XX", "1XX", "2XX", "3XX"];
+	//let magmaClr = (d) => d3.interpolateMagma( parseFloat( parseFloat((d.split(" ")[1][0])) / 4 ));
+	function magmaClr(d) {
+		try {
+			console.log(d);
+			//let num = d.split(" ")[1][0];
+			let num = d.match("/\d/");
+			console.log(num);
+			return d3.interpolateMagma( parseFloat( parseFloat(num) / 4 ))
+		} catch(e) {
+			//console.log(d.match("/\d/"));
+			console.log(e);
+		}
+		
+	}
+
+	// var colors = d3.scaleSequential().domain(levels)
+	//    d3.interpolateMagma(t);
+
 	d3.select("#graph")
 		.append("svg")
 		.attr("width", "1200")
@@ -223,6 +248,7 @@ function createGraph(datum) {
 	    height = svg.attr("height");
 
 	var color = d3.scaleOrdinal(d3.schemeCategory20);
+	//https://observablehq.com/@d3/color-schemes#Magma
 
 	var simulation = d3.forceSimulation()
 	    .force("link", d3.forceLink().id(function(d) { return d.name; }))
@@ -276,8 +302,9 @@ var path = svg.append("svg:g").selectAll("path")
 	    .enter().append("g");
 	    
 	  var circles = node.append("circle")
-	      .attr("r", 5)
-	      .attr("fill", d => d.ip ? 'red' : 'steelblue' )
+	      .attr("r", radius)
+	      //.attr("fill", d => d.ip ? 'red' : 'steelblue' )
+	      .attr("fill", d =>  d.name : magmaClr(d.name))
 	      .on("click", function(d) {
 	      	d3.select("#ttl")
 	      		.text((d.alias ? d.alias+"/" : "") + " " + d.ttl)
@@ -301,10 +328,24 @@ var path = svg.append("svg:g").selectAll("path")
 	      .attr('y', 3);
 
 	  var legend = svg.append("g")
-	      .attr('transform', 'translate(' + parseFloat(width-150) + ',' + '50)')
 	  	  .style("border", "1px solid black")
-	  	  .append("text")
-	      .text("Filter by:");
+	      .attr('transform', 'translate(' + parseFloat(width-150) + ',' + '50)');
+
+
+	     
+	  levels.map(function(d, idx) {
+
+		  legend.append("circle")
+		      .attr("r", radius)
+		      .attr("transform", "translate(0," + idx*radius*3 + ")")
+		      .attr("fill", d3.interpolateMagma(parseFloat(idx/4)));
+
+		  legend.append("text")
+		      .text(d)
+		      .attr("transform", "translate(" + radius*2 + "," + ((idx*radius*3)+radius) + ")");
+
+	  });
+
 
 	  node.append("title")
 	      .text(function(d) { return d.id });
