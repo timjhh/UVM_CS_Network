@@ -1,3 +1,40 @@
+function updateColors(selection) {
+
+	let options = ["Level", "Subject"];
+	let val;
+	let circles = d3.selectAll("circle");
+	
+
+	console.log(circles.filter(d => console.log(d)));
+	let arr = d3.map(circles, d => d.name).keys();
+	console.log(arr);
+	if(selection == 1) {
+
+	} else if(selection == 2) {
+		console.log(circles.map(d => d.name.match(/(\p{L}+)/g)).keys());
+		circles.select(this);
+	} else if(selection == 3) {
+
+	} else {
+
+	}
+
+	//d3.interpolateMagma( parseInt(d.match(/\d/)) / 4 )
+
+
+
+}
+
+// Updates the order of the graph based on a decided order:
+// 1 - Default, no order
+// 2 - Level, by class level(1XX,2XX)
+// 3 - Subject, by class subject(MATH, CIS)
+// Using d3.forceX | forceY, the graph will be split into n+1 vertical slices by the domain size of f(n).
+// If there are three possible Levels for a course, then |f(n)| = 4, n+1 = 5.
+function updateOrder() {
+
+}
+
 function createGraph(datum) {
 
 	var data = datum[0];
@@ -9,16 +46,36 @@ function createGraph(datum) {
 	// Node circle radius
 	var radius = 5;
 
+	// How to order the nodes
+	// 1 - Default, no order
+	// 2 - Level, by class level(1XX,2XX)
+	// 3 - Subject, by class subject(MATH, CIS)
+	var order = 1;
+
 	// Define legend levels and coloring for the graph
 	var levels = ["0XX", "1XX", "2XX", "3XX"];
 	let magmaClr = (d) => d3.interpolateMagma( parseInt(d.match(/\d/)) / 4 );
 
-	d3.select("#color-select")
+	var forceX = d3.forceX(function(d) {
+
+	});
+
+	var forceY = d3.forceY(function(d) {
+
+	});
+
+	d3.select("#order-select")
 		.on("change", function() {
-			console.log(d3.select(this).property("value"));
+			let ordSel = d3.select(this).property("value");
+			order = parseInt(ordSel);
 		});
 
 
+	d3.select("#color-select")
+		.on("change", function() {
+			let colSel = d3.select(this).property("value");
+			updateColors(colSel);
+		});
 
 
 	d3.select("#graph")
@@ -34,7 +91,9 @@ function createGraph(datum) {
 	var simulation = d3.forceSimulation()
 	    .force("link", d3.forceLink().id(function(d) { return d.name; }).strength(0.1))
 	    .force("charge", d3.forceManyBody())
-	    .force("center", d3.forceCenter(width / 2, height / 2));
+	    .force("center", d3.forceCenter(width / 2, height / 2))
+	    .force("x", forceX)
+	    .force("y", forceY);
 
 	  var link = svg.append("g")
 	      .attr("class", "links")
@@ -173,13 +232,10 @@ function createGraph(datum) {
 	        .attr("y2", function(d) { return d.target.y; });
 
 	    node
-	        .attr("transform", function(d) {
-	        	let r = 5;
-	        	// let x = d.x % width == d.x ? d.x : width % d.x;
-	        	// let y = d.y % height == d.y ? d.y : height % d.y;
-	         // 	return "translate(" + x + "," + y + ")";
-	         
-	         	return "translate(" + (d.x = Math.max(r, Math.min(width - r, d.x))) + "," + (d.y = Math.max(r, Math.min(height - r, d.y))) + ")";
+	        .attr("transform", function(d, idx) {
+
+	       	    return "translate(" + (d.x = Math.max(radius, Math.min(width - radius, d.x))) + "," + (d.y = Math.max(radius, Math.min(height - radius, d.y))) + ")";	
+
 	        })
 	  }
 
