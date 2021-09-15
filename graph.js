@@ -1,3 +1,5 @@
+window.order = 1;
+
 function updateColors(selection) {
 
 	let options = ["Level", "Subject"];
@@ -25,16 +27,6 @@ function updateColors(selection) {
 
 }
 
-// Updates the order of the graph based on a decided order:
-// 1 - Default, no order
-// 2 - Level, by class level(1XX,2XX)
-// 3 - Subject, by class subject(MATH, CIS)
-// Using d3.forceX | forceY, the graph will be split into n+1 vertical slices by the domain size of f(n).
-// If there are three possible Levels for a course, then |f(n)| = 4, n+1 = 5.
-function updateOrder() {
-
-}
-
 function createGraph(datum) {
 
 	var data = datum[0];
@@ -50,25 +42,63 @@ function createGraph(datum) {
 	// 1 - Default, no order
 	// 2 - Level, by class level(1XX,2XX)
 	// 3 - Subject, by class subject(MATH, CIS)
-	var order = 1;
+
+
+	var subjects;
 
 	// Define legend levels and coloring for the graph
 	var levels = ["0XX", "1XX", "2XX", "3XX"];
 	let magmaClr = (d) => d3.interpolateMagma( parseInt(d.match(/\d/)) / 4 );
 
-	var forceX = d3.forceX(function(d) {
-
-	});
-
-	var forceY = d3.forceY(function(d) {
-
-	});
-
 	d3.select("#order-select")
 		.on("change", function() {
 			let ordSel = d3.select(this).property("value");
-			order = parseInt(ordSel);
+			window.order = parseInt(ordSel);
 		});
+
+
+	// Set the x-position of nodes in accordance with their set order. Otherwise, set 0 x-force for an undirected graph
+	var forceX = d3.forceX(function(d) {
+
+		return width / 2;
+
+	}).strength(0.00);
+
+	// Set the y-position of nodes in accordance with their set order. Otherwise, set 0 y-force for an undirected graph
+	var forceY = d3.forceY(function(d) {
+		
+
+		// d3.select("#order-select")
+		// 	.on("change", function() {
+		// 		let ordSel = d3.select(this).property("value");
+		// 		window.order = parseInt(ordSel);
+		// 	});
+
+		var order_by = $("#order-select > option:selected").prop("label");
+		console.log(order_by);
+
+		// Number of elements in the domain
+		var domain;
+
+		// height of each section(height was taken)
+		var tall;
+
+		if(order_by == "Level") {
+
+			domain = levels.length+1;
+			tall = height / domain;
+			console.log(d);
+			console.log(parseInt(d.name.match(/\d/))); // Select the first valid integer as class level
+			return parseInt(d.name.match(/\d/)) ? (tall * parseInt(d.name.match(/\d/))) : height-50 ; 
+
+		} else if(order == 3) {
+
+		}
+		return height / 2; // Default, no directed force added
+
+	}).strength(0.5);
+
+
 
 
 	d3.select("#color-select")
@@ -232,7 +262,7 @@ function createGraph(datum) {
 	        .attr("y2", function(d) { return d.target.y; });
 
 	    node
-	        .attr("transform", function(d, idx) {
+	        .attr("transform", function(d) {
 
 	       	    return "translate(" + (d.x = Math.max(radius, Math.min(width - radius, d.x))) + "," + (d.y = Math.max(radius, Math.min(height - radius, d.y))) + ")";	
 
