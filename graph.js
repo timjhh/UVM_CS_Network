@@ -75,7 +75,6 @@ function createGraph(datum) {
 		// 	});
 
 		var order_by = $("#order-select > option:selected").prop("label");
-		console.log(order_by);
 
 		// Number of elements in the domain
 		var domain;
@@ -99,6 +98,7 @@ function createGraph(datum) {
 		var order_by = $("#order-select > option:selected").prop("label");
 		return order_by == "Level" ? 0.5 : 0;
 	});
+
 
 
 
@@ -199,6 +199,41 @@ function createGraph(datum) {
 	      		.text(d.desc)
 	      })
 	      .attr('y', 3);
+
+	d3.select("#order-select")
+		.on("change", function() {
+			console.log(this);
+		  // reheat the simulation:
+		  simulation
+		    .alpha(0.5)
+		    .alphaTarget(0.3)
+		    .restart();
+
+			simulation.force("y").initialize(node);
+			// forceY = d3.forceY(function(d) {
+
+			// 			var order_by = $("#order-select > option:selected").prop("label");
+			// 			console.log(order_by);
+			// 		// Number of elements in the domain
+			// 		var domain;
+
+			// 		// height of each section(height was taken)
+			// 		var tall;
+
+			// 		if(order_by == "Level") {
+
+			// 			domain = levels.length+1;
+			// 			tall = height / domain;
+			// 			//console.log(parseInt(d.name.match(/\d/))); // Select the first valid integer as class level
+			// 			return parseInt(d.name.match(/\d/)) ? (height-(tall * (parseInt(d.name.match(/\d/)))+1)) : height-50 ;
+
+			// 		} else if(order_by == "Subject") {
+
+			// 		}
+			// 		return height / 2; // Default, no directed force added
+			// });
+			
+		});
 
 
 	  // Build physical legend component and styling
