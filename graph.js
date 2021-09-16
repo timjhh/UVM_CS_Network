@@ -87,16 +87,18 @@ function createGraph(datum) {
 
 			domain = levels.length+1;
 			tall = height / domain;
-			console.log(d);
-			console.log(parseInt(d.name.match(/\d/))); // Select the first valid integer as class level
-			return parseInt(d.name.match(/\d/)) ? (tall * parseInt(d.name.match(/\d/))) : height-50 ; 
+			//console.log(parseInt(d.name.match(/\d/))); // Select the first valid integer as class level
+			return parseInt(d.name.match(/\d/)) ? (height-(tall * (parseInt(d.name.match(/\d/)))+1)) : height-50 ;
 
-		} else if(order == 3) {
+		} else if(order_by == "Subject") {
 
 		}
 		return height / 2; // Default, no directed force added
 
-	}).strength(0.5);
+	}).strength(function(d) {
+		var order_by = $("#order-select > option:selected").prop("label");
+		return order_by == "Level" ? 0.5 : 0;
+	});
 
 
 
