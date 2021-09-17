@@ -1,5 +1,4 @@
-# UVM_Viz
-Vizualization of UVM Courses
+# Vizualization of UVM Computer Science Courses
 
 https://www.uvm.edu/cems/cs/courses
 
