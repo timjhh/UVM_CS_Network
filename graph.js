@@ -47,7 +47,7 @@ function createGraph(datum) {
 	var subjects;
 
 	// Define legend levels and coloring for the graph
-	var levels = ["0XX", "1XX", "2XX", "3XX"];
+	var levels = ["0XX", "1XX", "2XX"];
 	let magmaClr = (d) => d3.interpolateMagma( parseInt(d.match(/\d/)) / 4 );
 
 	d3.select("#order-select")
@@ -173,20 +173,41 @@ function createGraph(datum) {
 	    .data(data)
 	    .enter().append("g");
 	    
+	  // svg.on("click", function(d) {
+	  // 		link.attr("opacity", 1);
+	  // });
+
+
 	  var circles = node.append("circle")
 	      .attr("r", radius)
 	      .attr("fill", d =>  magmaClr(d.name))
 	      //.style("stroke", d => d.ip ? '2px solid green' : '' )
 	      .on("click", function(d) {
+
+	      	// First, select the title and description to append to the page
 	      	d3.select("#ttl")
-	      		.text((d.alias ? d.alias+"/" : "") + " " + d.ttl)
+	      		.text((d.alias ? d.alias+"/" : "") + " " + d.ttl);
 	      	d3.select("#desc")
-	      		.text(d.desc)
+	      		.text(d.desc);
+
+	      	var connected = link.filter(e => e.source.name == d.name || e.target.name == d.name);
+	      	connected.filter(f => console.log(f));
+
+	      	//console.log(connected);
+	      	// Second, highlight this node and any nodes it's associated with
+	      	//link.attr("opacity", connected.map(f => f.source).indexOf(d.name) > -1 || connected.map(f => f.target).indexOf(d.name) > -1 ? 1 : 0.1);
+
+	      	//console.log(node.filter(f => connected.filter(e => e.source.name == f.name || e.target.name == f.name) ));
+	      	node.attr("opacity", f => connected.filter(e => e.source.name == f.name || e.target.name == f.name).length > 1 ? 1 : 0.1);
+
+	      	link.attr("opacity", e => (e.source.name == d.name || e.target.name == d.name) ? 1 : 0.1);
+
 	      })
 	      .call(d3.drag()
 	          .on("start", dragstarted)
 	          .on("drag", dragged)
 	          .on("end", dragended));
+
 
 	  var labels = node.append("text")
 	      .text((d) => d.name.toUpperCase())
@@ -205,8 +226,7 @@ function createGraph(datum) {
 			console.log(this);
 		  // reheat the simulation:
 		  simulation
-		    .alpha(0.5)
-		    .alphaTarget(0.3)
+		    .alphaTarget(0)
 		    .restart();
 
 			simulation.force("y").initialize(node);
