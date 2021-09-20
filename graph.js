@@ -174,16 +174,20 @@ function createGraph(datum) {
 	    .enter().append("g");
 	    
 	  svg.on("click", function(d) {
-	  		link.attr("opacity", 1);
+	  		///console.log(d.target);
+	  		if(d3.event.target.tagName == "svg") {
+	  			node.attr("opacity", 1);
+	  			link.attr("opacity", 1);
+	  		}
+
 	  });
 
 
-	
+
 
 	  var circles = node.append("circle")
 	      .attr("r", radius)
 	      .attr("fill", d =>  magmaClr(d.name))
-	      //.style("stroke", d => d.ip ? '2px solid green' : '' )
 	      .on("click", function(d) {
 
 	      	// First, select the title and description to append to the page
@@ -193,15 +197,12 @@ function createGraph(datum) {
 	      		.text(d.desc);
 
 	      	var connected = link.filter(e => e.source.name == d.name || e.target.name == d.name);
-	      	console.log(connected);
-	      	//node.attr("opacity", f => connected.filter(e => e.source.name == f.name || e.target.name == f.name).length > 1 ? 1 : 0.1);
+
 
 	      	node.attr("opacity", 0.1);
 	      	link.attr("opacity", e => (e.source.name == d.name || e.target.name == d.name) ? 1 : 0.1);
 
 	      	connected.each(function(g) {
-
-	      		//node.attr("opacity", h => (h.name == g.target.name || h.name == g.source.name) ? 1 : 0.1);
 
 	      		node.filter(h => h.name == g.source.name || h.name == g.target.name).attr("opacity", 1);
 	      	});
@@ -222,6 +223,21 @@ function createGraph(datum) {
 	      		.text((d.alias ? d.alias+"/" : "") + " " + d.ttl)
 	      	d3.select("#desc")
 	      		.text(d.desc)
+
+	      	var connected = link.filter(e => e.source.name == d.name || e.target.name == d.name);
+
+
+	      	node.attr("opacity", 0.1);
+	      	link.attr("opacity", e => (e.source.name == d.name || e.target.name == d.name) ? 1 : 0.1);
+
+
+	      	node.filter(h => h.name == d.name).attr("opacity", 1);
+
+	      	connected.each(function(g) {
+	      		node.filter(h => h.name == g.source.name || h.name == g.target.name).attr("opacity", 1);
+	      	});
+
+
 	      })
 	      .attr('y', 3);
 
