@@ -173,10 +173,12 @@ function createGraph(datum) {
 	    .data(data)
 	    .enter().append("g");
 	    
-	  // svg.on("click", function(d) {
-	  // 		link.attr("opacity", 1);
-	  // });
+	  svg.on("click", function(d) {
+	  		link.attr("opacity", 1);
+	  });
 
+
+	
 
 	  var circles = node.append("circle")
 	      .attr("r", radius)
@@ -191,16 +193,18 @@ function createGraph(datum) {
 	      		.text(d.desc);
 
 	      	var connected = link.filter(e => e.source.name == d.name || e.target.name == d.name);
-	      	connected.filter(f => console.log(f));
+	      	console.log(connected);
+	      	//node.attr("opacity", f => connected.filter(e => e.source.name == f.name || e.target.name == f.name).length > 1 ? 1 : 0.1);
 
-	      	//console.log(connected);
-	      	// Second, highlight this node and any nodes it's associated with
-	      	//link.attr("opacity", connected.map(f => f.source).indexOf(d.name) > -1 || connected.map(f => f.target).indexOf(d.name) > -1 ? 1 : 0.1);
-
-	      	//console.log(node.filter(f => connected.filter(e => e.source.name == f.name || e.target.name == f.name) ));
-	      	node.attr("opacity", f => connected.filter(e => e.source.name == f.name || e.target.name == f.name).length > 1 ? 1 : 0.1);
-
+	      	node.attr("opacity", 0.1);
 	      	link.attr("opacity", e => (e.source.name == d.name || e.target.name == d.name) ? 1 : 0.1);
+
+	      	connected.each(function(g) {
+
+	      		//node.attr("opacity", h => (h.name == g.target.name || h.name == g.source.name) ? 1 : 0.1);
+
+	      		node.filter(h => h.name == g.source.name || h.name == g.target.name).attr("opacity", 1);
+	      	});
 
 	      })
 	      .call(d3.drag()
