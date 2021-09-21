@@ -43,8 +43,13 @@ function createGraph(datum) {
 	// 2 - Level, by class level(1XX,2XX)
 	// 3 - Subject, by class subject(MATH, CIS)
 
+	// Get listings grouped by subject name
+	//var subjects = d3.reduce(data, d => d.name.match(/[A-Z]+/)[0]);
+	var subjects = d3.group(data, d => d.name.match(/[A-Z]+/)[0]);
+	console.log(subjects);
 
-	var subjects;
+	// Get ordering mode
+	var order_by = $("#order-select > option:selected").prop("label");
 
 	// Define legend levels and coloring for the graph
 	var levels = ["0XX", "1XX", "2XX"];
@@ -68,13 +73,7 @@ function createGraph(datum) {
 	var forceY = d3.forceY(function(d) {
 		
 
-		// d3.select("#order-select")
-		// 	.on("change", function() {
-		// 		let ordSel = d3.select(this).property("value");
-		// 		window.order = parseInt(ordSel);
-		// 	});
-
-		var order_by = $("#order-select > option:selected").prop("label");
+		order_by = $("#order-select > option:selected").prop("label");
 
 		// Number of elements in the domain
 		var domain;
@@ -95,13 +94,9 @@ function createGraph(datum) {
 		return height / 2; // Default, no directed force added
 
 	}).strength(function(d) {
-		var order_by = $("#order-select > option:selected").prop("label");
+		order_by = $("#order-select > option:selected").prop("label");
 		return order_by == "Level" ? 0.5 : 0;
 	});
-
-
-
-
 
 	d3.select("#color-select")
 		.on("change", function() {
@@ -123,6 +118,7 @@ function createGraph(datum) {
 	var simulation = d3.forceSimulation()
 	    .force("link", d3.forceLink().id(function(d) { return d.name; }).strength(0.1))
 	    .force("charge", d3.forceManyBody())
+	    .force("repel", d3.forceManyBody().strength(-30))
 	    .force("center", d3.forceCenter(width / 2, height / 2))
 	    .force("x", forceX)
 	    .force("y", forceY);
@@ -183,8 +179,6 @@ function createGraph(datum) {
 	  });
 
 
-
-
 	  var circles = node.append("circle")
 	      .attr("r", radius)
 	      .attr("fill", d =>  magmaClr(d.name))
@@ -230,7 +224,6 @@ function createGraph(datum) {
 	      	node.attr("opacity", 0.1);
 	      	link.attr("opacity", e => (e.source.name == d.name || e.target.name == d.name) ? 1 : 0.1);
 
-
 	      	node.filter(h => h.name == d.name).attr("opacity", 1);
 
 	      	connected.each(function(g) {
@@ -243,35 +236,57 @@ function createGraph(datum) {
 
 	d3.select("#order-select")
 		.on("change", function() {
-			console.log(this);
+
+			//simulation.force("y").initialize(node);
+			//simulation.force("y").initialize(link);
+
+			order_by = $("#order-select > option:selected").prop("label");
+
+			simulation.force("y", d3.forceY(function(d) {
+				
+				// Number of elements in the domain
+				var domain;
+
+				// height of each section(height was taken)
+				var tall;
+
+
+
+
+				if(order_by == "Level") {
+					$("#legtext").text("Course Level");
+					domain = levels.length+1;
+					tall = height / domain;
+					//console.log(parseInt(d.name.match(/\d/))); // Select the first valid integer as class level
+					return parseInt(d.name.match(/\d/)) ? (height-(tall * (parseInt(d.name.match(/\d/)))+1)) : height-50;
+
+				} else if(order_by == "Subject") {
+					$("#legtext").text("Course Subject");
+
+					var bin = d3.bin()
+				    .domain(subjects.keys())
+				    .thresholds(20);
+
+					domain = subjects.size+1;
+					tall = height / domain;
+					//return d3.range(tall, height-tall,50);
+					return bin(d);
+					//return d.name.match(/[A-Z]+/) ? (height-(tall * (parseInt(d.name.match(/[A-Z]+/)))+1)) : height-50;
+				}
+				$("#legtext").text("Course Level");
+				return null; // Default, no directed force added
+
+			}).strength(function(d) {
+
+				return 50;
+
+
+			}));
+
 		  // reheat the simulation:
 		  simulation
 		    .alphaTarget(0)
 		    .restart();
-
-			simulation.force("y").initialize(node);
-			// forceY = d3.forceY(function(d) {
-
-			// 			var order_by = $("#order-select > option:selected").prop("label");
-			// 			console.log(order_by);
-			// 		// Number of elements in the domain
-			// 		var domain;
-
-			// 		// height of each section(height was taken)
-			// 		var tall;
-
-			// 		if(order_by == "Level") {
-
-			// 			domain = levels.length+1;
-			// 			tall = height / domain;
-			// 			//console.log(parseInt(d.name.match(/\d/))); // Select the first valid integer as class level
-			// 			return parseInt(d.name.match(/\d/)) ? (height-(tall * (parseInt(d.name.match(/\d/)))+1)) : height-50 ;
-
-			// 		} else if(order_by == "Subject") {
-
-			// 		}
-			// 		return height / 2; // Default, no directed force added
-			// });
 			
 		});
 
@@ -286,10 +301,9 @@ function createGraph(datum) {
 	  .text("abcd")
 	  .attr("transform", "translate(-20,-25)");
 
-
-
 	  // Append title to legend
 	  legend.append("text")
+	  	.attr("id", "legtext")
 	  	.attr("font-weight", "bold")
 	  	.text("Class Level")
 	  	.attr("transform", "translate(-20,-15)");
@@ -306,6 +320,16 @@ function createGraph(datum) {
 		      .text(d)
 		      .attr("transform", "translate(" + radius*2 + "," + ((idx*radius*3)+radius) + ")");
 	  });
+
+	  var search = svg.append("g")
+	  	.attr("class", "md-form mt-0")
+	  	.attr('transform', 'translate(' + parseFloat(150) + ',' + '50)');
+
+	  search.append("input")
+	  	.attr("class", "form-control")
+	  	.attr("type", "text")
+	  	.attr("placeholder", "Search")
+	  	.attr("aria-label", "Search");
 
 
 	  node.append("title")
@@ -340,10 +364,9 @@ function createGraph(datum) {
 
 	    node
 	        .attr("transform", function(d) {
-
 	       	    return "translate(" + (d.x = Math.max(radius, Math.min(width - radius, d.x))) + "," + (d.y = Math.max(radius, Math.min(height - radius, d.y))) + ")";	
+	        });
 
-	        })
 	  }
 
 	function dragstarted(d) {
