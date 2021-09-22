@@ -21,11 +21,24 @@ function updateColors(selection) {
 
 	}
 
-	//d3.interpolateMagma( parseInt(d.match(/\d/)) / 4 )
+}
 
+// Returns a mapping to a forceY coordinate for each object in the scale
+// This is used to update spacing between nodes for different orderings of nodes
+// Takes an array as input
+function getYScale(dom, height) {
 
+	var margin = 50;
+	var step = height / dom.length;
+
+	var scale = d3.scaleOrdinal()
+	.domain(dom)
+	.range(d3.range(margin, height-margin, step));
+
+	return scale;
 
 }
+
 
 function createGraph(datum) {
 
@@ -38,21 +51,27 @@ function createGraph(datum) {
 	// Node circle radius
 	var radius = 5;
 
-	// How to order the nodes
-	// 1 - Default, no order
-	// 2 - Level, by class level(1XX,2XX)
-	// 3 - Subject, by class subject(MATH, CIS)
-
 	// Get listings grouped by subject name
 	//var subjects = d3.reduce(data, d => d.name.match(/[A-Z]+/)[0]);
 	var subjects = d3.group(data, d => d.name.match(/[A-Z]+/)[0]);
-	console.log(subjects);
 
 	// Get ordering mode
 	var order_by = $("#order-select > option:selected").prop("label");
 
 	// Define legend levels and coloring for the graph
 	var levels = ["0XX", "1XX", "2XX"];
+
+
+	// DEFINE SCALE TYPES HERE
+
+	// Scale levels such as '0XX', '1XX'
+	var levelScale = getYScale(levels, height);
+
+	// Scale subjects such as 'MATH', 'CS'
+	var subjectScale = getYScale(d3.map(subjects, function(e) { return e[0] }), height);
+
+
+
 	let magmaClr = (d) => d3.interpolateMagma( parseInt(d.match(/\d/)) / 4 );
 
 	d3.select("#order-select")
@@ -63,40 +82,10 @@ function createGraph(datum) {
 
 
 	// Set the x-position of nodes in accordance with their set order. Otherwise, set 0 x-force for an undirected graph
-	var forceX = d3.forceX(function(d) {
-
-		return width / 2;
-
-	}).strength(0.00);
+	var forceX = d3.forceX(null).strength(0);
 
 	// Set the y-position of nodes in accordance with their set order. Otherwise, set 0 y-force for an undirected graph
-	var forceY = d3.forceY(function(d) {
-		
-
-		order_by = $("#order-select > option:selected").prop("label");
-
-		// Number of elements in the domain
-		var domain;
-
-		// height of each section(height was taken)
-		var tall;
-
-		if(order_by == "Level") {
-
-			domain = levels.length+1;
-			tall = height / domain;
-			//console.log(parseInt(d.name.match(/\d/))); // Select the first valid integer as class level
-			return parseInt(d.name.match(/\d/)) ? (height-(tall * (parseInt(d.name.match(/\d/)))+1)) : height-50 ;
-
-		} else if(order_by == "Subject") {
-
-		}
-		return height / 2; // Default, no directed force added
-
-	}).strength(function(d) {
-		order_by = $("#order-select > option:selected").prop("label");
-		return order_by == "Level" ? 0.5 : 0;
-	});
+	var forceY = d3.forceY(null).strength(0);
 
 	d3.select("#color-select")
 		.on("change", function() {
@@ -170,7 +159,7 @@ function createGraph(datum) {
 	    .enter().append("g");
 	    
 	  svg.on("click", function(d) {
-	  		///console.log(d.target);
+
 	  		if(d3.event.target.tagName == "svg") {
 	  			node.attr("opacity", 1);
 	  			link.attr("opacity", 1);
@@ -237,51 +226,34 @@ function createGraph(datum) {
 	d3.select("#order-select")
 		.on("change", function() {
 
-			//simulation.force("y").initialize(node);
-			//simulation.force("y").initialize(link);
 
 			order_by = $("#order-select > option:selected").prop("label");
 
 			simulation.force("y", d3.forceY(function(d) {
 				
-				// Number of elements in the domain
-				var domain;
-
-				// height of each section(height was taken)
-				var tall;
-
-
-
-
 				if(order_by == "Level") {
+					
 					$("#legtext").text("Course Level");
-					domain = levels.length+1;
-					tall = height / domain;
-					//console.log(parseInt(d.name.match(/\d/))); // Select the first valid integer as class level
-					return parseInt(d.name.match(/\d/)) ? (height-(tall * (parseInt(d.name.match(/\d/)))+1)) : height-50;
+					return levelScale(d.name.match(/\d/));
 
 				} else if(order_by == "Subject") {
+
 					$("#legtext").text("Course Subject");
+					return subjectScale(d.name.match(/[A-Z]+/));
 
-					var bin = d3.bin()
-				    .domain(subjects.keys())
-				    .thresholds(20);
-
-					domain = subjects.size+1;
-					tall = height / domain;
-					//return d3.range(tall, height-tall,50);
-					return bin(d);
-					//return d.name.match(/[A-Z]+/) ? (height-(tall * (parseInt(d.name.match(/[A-Z]+/)))+1)) : height-50;
 				}
+
+				// Default legend text
 				$("#legtext").text("Course Level");
-				return null; // Default, no directed force added
+				// Default, no directed force added
+				return null;
 
 			}).strength(function(d) {
 
-				return 50;
-
+				return 1;
 
 			}));
+
 
 		  // reheat the simulation:
 		  simulation
