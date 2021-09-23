@@ -28,8 +28,12 @@ function updateColors(selection) {
 // Takes an array as input
 function getYScale(dom, height) {
 
+	console.log(dom);
+	console.log(height);
+
 	var margin = 25;
 	var step = height / dom.length;
+
 
 	var scale = d3.scaleOrdinal()
 	.domain(dom)
@@ -59,9 +63,10 @@ function createGraph(datum) {
 
 	// Define legend levels and coloring for the graph
 	var levels = ["0XX", "1XX", "2XX"];
-	var options = ["Level", "Subject", "Prerequisites"];
+	var options = ["Level", "Subject", "Prereq Count"];
+	var prCount = d3.rollup(links, v => v.length, d => d.target); // Prerequisite count per course name
 
-
+	console.log(prCount);
 	// DEFINE SCALE TYPES HERE
 
 	// Scale levels such as '0XX', '1XX'
@@ -70,12 +75,17 @@ function createGraph(datum) {
 	// Scale subjects such as 'MATH', 'CS'
 	var subjectScale = getYScale(d3.map(subjects, function(e) { return e[0] }), height);
 
-	console.log(links);
-	console.log(d3.rollup(links, v => v.source, d => d.target));
+
+	console.log(d3.map(prCount, e => e[1]));
+	console.log(d3.extent(prCount.values()));
+	console.log();
+
+	var arr = Array.from(new Set(d3.map(prCount, e => e[1])));
+	arr.push(0);
+
 
 	// Scale number of prerequisites
-	//var linkScale = getYScale(, height);
-
+	var linkScale = getYScale(arr.sort(), height);
 
 	// Define color scheme for nodes, d3's Magma scheme imported from chromatic palettes
 	let magmaClr = (d) => d3.interpolateMagma( parseInt(d.match(/\d/)) / 4 );
@@ -98,6 +108,14 @@ function createGraph(datum) {
 
 				$("#legtext").text("Course Subject");
 				return subjectScale(d.name.match(/[A-Z]+/));
+
+			} else if(order_by == "Prereq Count") {
+
+				$("#legtext").text("Prereq Count");
+				//console.log(linkScale(prCount.get(d.name)));
+				//console.log(prCount.get(d.name));
+				//console.log(linkScale(prCount.get(d.name) ? prCount.get(d.name) : 0));
+				return linkScale(prCount.get(d.name) ? prCount.get(d.name) : 0);
 
 			}
 
