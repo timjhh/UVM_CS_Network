@@ -28,7 +28,7 @@ function updateColors(selection) {
 // Takes an array as input
 function getYScale(dom, height) {
 
-	var margin = 50;
+	var margin = 25;
 	var step = height / dom.length;
 
 	var scale = d3.scaleOrdinal()
@@ -38,7 +38,6 @@ function getYScale(dom, height) {
 	return scale;
 
 }
-
 
 function createGraph(datum) {
 
@@ -85,7 +84,34 @@ function createGraph(datum) {
 	var forceX = d3.forceX(null).strength(0);
 
 	// Set the y-position of nodes in accordance with their set order. Otherwise, set 0 y-force for an undirected graph
-	var forceY = d3.forceY(null).strength(0);
+	var forceY = d3.forceY(function(d) {
+
+		var order_by = $("#order-select > option:selected").prop("label");
+			
+			if(order_by == "Level") {
+				
+				$("#legtext").text("Course Level");
+				return levelScale(d.name.match(/\d/));
+
+			} else if(order_by == "Subject") {
+
+				$("#legtext").text("Course Subject");
+				return subjectScale(d.name.match(/[A-Z]+/));
+
+			}
+
+			// Default legend text
+			$("#legtext").text("Course Level");
+			// Default, no directed force added
+			return null;
+
+	}).strength(function() {
+		order_by = $("#order-select > option:selected").prop("label");
+		if(order_by != "Level" && order_by != "Subject") {
+			return 0;
+		}
+		return 0.5;
+	});
 
 	d3.select("#color-select")
 		.on("change", function() {
@@ -112,6 +138,25 @@ function createGraph(datum) {
 	    .force("x", forceX)
 	    .force("y", forceY);
 
+
+	// Draw arrows to link courses
+	svg.append("svg:defs").selectAll("marker")
+	    .data(["end"])
+	  .enter().append("svg:marker")
+	    .attr("id", String)
+	    .attr("viewBox", "0 -5 10 10")
+	    .attr("refX", 15)
+	    .attr("refY", -1.5)
+	    .attr("markerWidth", 6)
+	    .attr("markerHeight", 6)
+	    .attr("orient", "auto")
+	  .append("svg:path")
+	    .attr("d", "M0,-5L10,0L0,5");
+
+
+	  // Draw links between nodes,
+	  // Class the links based on their prereq/coreq status attribute
+	  // Then, append arrows to the end of each link
 	  var link = svg.append("g")
 	      .attr("class", "links")
 	    .selectAll("line")
@@ -127,30 +172,8 @@ function createGraph(datum) {
 	      	}
 	      	return "ln";
 	      })
-	      .attr("stroke-width", 1);
-
-	// build the arrow.
-	// svg.append("svg:defs").selectAll("marker")
-	//     .data(["end"])      // Different link/path types can be defined here
-	//   .enter().append("svg:marker")    // This section adds in the arrows
-	//     .attr("id", String)
-	//     .attr("viewBox", "0 -5 10 10")
-	//     .attr("refX", 15)
-	//     .attr("refY", -1.5)
-	//     .attr("markerWidth", 6)
-	//     .attr("markerHeight", 6)
-	//     .attr("orient", "auto")
-	//   .append("svg:path")
-	//     .attr("d", "M0,-5L10,0L0,5");
-
-	// add the links and the arrows
-	// var path = svg.append("svg:g").selectAll("path")
-	//     .data(links)
-	//   .enter().append("svg:path")
-	// //    .attr("class", function(d) { return "link " + d.type; })
-	//     .attr("class", "link")
-	//     .attr("marker-end", "url(#end)");
-
+	    .style("stroke-width", function(d) { return 1.5; })
+    	.attr("marker-end", "url(#end)");
 
 	  var node = svg.append("g")
 	      .attr("class", "nodes")
@@ -226,41 +249,15 @@ function createGraph(datum) {
 	d3.select("#order-select")
 		.on("change", function() {
 
+			// Re-compute y force on graph
+			simulation.force("y").initialize(data);
 
-			order_by = $("#order-select > option:selected").prop("label");
-
-			simulation.force("y", d3.forceY(function(d) {
-				
-				if(order_by == "Level") {
-					
-					$("#legtext").text("Course Level");
-					return levelScale(d.name.match(/\d/));
-
-				} else if(order_by == "Subject") {
-
-					$("#legtext").text("Course Subject");
-					return subjectScale(d.name.match(/[A-Z]+/));
-
-				}
-
-				// Default legend text
-				$("#legtext").text("Course Level");
-				// Default, no directed force added
-				return null;
-
-			}).strength(function(d) {
-
-				return 1;
-
-			}));
-
-
-		  // reheat the simulation:
-		  simulation
-		  	.alpha(0.1)
-		    .alphaTarget(0)
-		    .restart();
-
+			// Restart simulation
+			simulation
+				.alpha(0.2)
+				.alphaTarget(0)
+				.restart();
+ 
 
 			
 		});
