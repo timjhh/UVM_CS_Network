@@ -257,8 +257,11 @@ function createGraph(datum) {
 
 		  // reheat the simulation:
 		  simulation
+		  	.alpha(0.1)
 		    .alphaTarget(0)
 		    .restart();
+
+
 			
 		});
 
