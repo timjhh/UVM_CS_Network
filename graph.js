@@ -330,6 +330,8 @@ function createGraph(datum) {
 				updateGuideLines(d3.map(subjects, function(e) { return e[0] }), subjectScale);
 			} else if(order_by == "Prereq Count") {
 				updateGuideLines(arr, linkScale);			
+			} else {
+				$(".guides").html(" ");
 			}
 
 
@@ -376,6 +378,8 @@ function createGraph(datum) {
 
 	  });
 
+
+	  // Search functionality for nodes
 	  var search = svg.append("g")
 	  .attr("class", "md-form mt-0")
 	  .attr('transform', 'translate(' + parseFloat(150) + ',' + '50)');
@@ -387,9 +391,8 @@ function createGraph(datum) {
 	  .attr("aria-label", "Search");
 
 
-	  node.append("title")
-	  .text(function(d) { return d.id });
 
+	  // Modify simulation update features
 	  simulation
 	  .nodes(data)
 	  .on("tick", ticked);
