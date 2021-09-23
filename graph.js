@@ -1,35 +1,44 @@
 
+// Append helpful guidelines to screen to show different
+// brackets for ordering
+// Args: 
+// Arr - domain of given scale
+// Scale - Ordering scale used for spacing
+function updateGuideLines(arr, scale, svg) {
 
-function showGuideLines(arr, scale, svg) {
+	// Remove previously placed guidelines
+	$(".guides").html(" ");
 
-	console.log(d3.select(".links"));
-
-	var lines = svg.append("g")
+	// Define data to display
+	var lines = d3.select("svg").append("g")
 	.attr("class", "guides")
 	.selectAll("line")
-	.data(arr)
-	.enter().append("g");
+	.data(arr);
 
-	lines
-	.append("line")
-	.attr("y1", (d,idx) => scale(idx))
-	.attr("y2", (d,idx) => scale(idx))
+	// Add new lines to display
+	var g = lines.enter()
+	.append("g");
+
+	// Create physical guidelines
+	g.append("line")
+	.attr("y1", d => scale(d))
+	.attr("y2", d => scale(d))
 	.attr("x1", 0)
 	.attr("x2", 1200)
 	.attr("stroke", "red")
-	.style("stroke-width", "2")
+	.style("stroke-width", "2");
 
-	lines
-	.append("text")
+	// Append text labels to lines
+	g.append("text")
 	.attr("x", 6)
-	.attr("y", (d,idx) => scale(idx))
-	.text(d => d);
+	.attr("y", (d,idx) => scale(d))
+	.text(d => d + " - " + scale(d));
+
 }
 
 function updateColors(selection) {
 
-	let options = ["Level", "Subject", "Prerequisites"];
-	let val;
+	let options = ["Level", "Subject", "Prereq Count"];
 	let circles = d3.selectAll("circle");
 	
 
@@ -49,19 +58,37 @@ function updateColors(selection) {
 
 }
 
-// Returns a mapping to a forceY coordinate for each object in the scale
+// Returns a mapping to a forceY coordinate for each object in a returned ordinal scale
 // This is used to update spacing between nodes for different orderings of nodes
-// Takes an array as input
+// Inputs:
+// arr -> domain of scale in form of array
+// height -> height of the canvas
 function getYScale(dom, height) {
 
-	console.log(dom);
-	console.log(height);
-
 	var margin = 25;
-	var step = height / dom.length;
+	var step = (height-margin-margin) / dom.length;
 
 
 	var scale = d3.scaleOrdinal()
+	.domain(dom)
+	.range(d3.range(margin, height-margin, step));
+
+	return scale;
+
+}
+// Returns a mapping to a forceY coordinate for each integer in a linear scale
+// This is used to update spacing between nodes for different orderings of nodes
+// Inputs:
+// arr -> domain of scale in form of array
+// height -> height of the canvas
+function getLinYScale(dom, height) {
+
+
+	var margin = 25;
+	var step = (height-(2*margin)) / dom.length;
+
+
+	var scale = d3.scaleLinear()
 	.domain(dom)
 	.range(d3.range(margin, height-margin, step));
 
@@ -92,7 +119,7 @@ function createGraph(datum) {
 	var options = ["Level", "Subject", "Prereq Count"];
 	var prCount = d3.rollup(links, v => v.length, d => d.target); // Prerequisite count per course name
 
-	console.log(prCount);
+
 	// DEFINE SCALE TYPES HERE
 
 	// Scale levels such as '0XX', '1XX'
@@ -102,25 +129,24 @@ function createGraph(datum) {
 	var subjectScale = getYScale(d3.map(subjects, function(e) { return e[0] }), height);
 
 
-	console.log(d3.map(prCount, e => e[1]));
-	console.log(d3.extent(prCount.values()));
-	console.log();
-
 	var arr = Array.from(new Set(d3.map(prCount, e => e[1])));
 	arr.push(0);
 
-
 	// Scale number of prerequisites
-	var linkScale = getYScale(arr.sort(), height);
+	//var linkScale = getYScale(arr.sort(), height);
+	var linkScale = getLinYScale(d3.range(0,9), height);
+
 
 	// Define color scheme for nodes, d3's Magma scheme imported from chromatic palettes
 	let magmaClr = (d) => d3.interpolateMagma( parseInt(d.match(/\d/)) / 4 );
 
 
-	// Set the x-position of nodes in accordance with their set order. Otherwise, set 0 x-force for an undirected graph
+	// Set the x-position of nodes in accordance with their set order.
+	// Otherwise, set 0 x-force for an undirected graph
 	var forceX = d3.forceX(null).strength(0);
 
-	// Set the y-position of nodes in accordance with their set order. Otherwise, set 0 y-force for an undirected graph
+	// Set the y-position of nodes in accordance with their set order. 
+	// Otherwise, set 0 y-force for an undirected graph
 	var forceY = d3.forceY(function(d) {
 
 		var order_by = $("#order-select > option:selected").prop("label");
@@ -138,12 +164,9 @@ function createGraph(datum) {
 		} else if(order_by == "Prereq Count") {
 
 			$("#legtext").text("Prereq Count");
-				//console.log(linkScale(prCount.get(d.name)));
-				//console.log(prCount.get(d.name));
-				//console.log(linkScale(prCount.get(d.name) ? prCount.get(d.name) : 0));
-				return linkScale(prCount.get(d.name) ? prCount.get(d.name) : 0);
+			return linkScale(prCount.get(d.name) ? prCount.get(d.name) : 0);
 
-			}
+		}
 
 			// Default legend text
 			$("#legtext").text("Course Level");
@@ -160,7 +183,7 @@ function createGraph(datum) {
 			}
 
 			// Otherwise, bind the graph together to show special ordering
-			return 1;
+			return 0.5;
 
 		});
 
@@ -169,8 +192,6 @@ function createGraph(datum) {
 			let colSel = d3.select(this).property("value");
 			updateColors(colSel);
 		});
-
-		
 
 		d3.select("#graph")
 		.append("svg")
@@ -189,13 +210,6 @@ function createGraph(datum) {
 		.force("center", d3.forceCenter(width / 2, height / 2))
 		.force("x", forceX)
 		.force("y", forceY);
-
-
-
-		// SHOW GUIDELINES ON SCREEN
-		showGuideLines(arr, linkScale, svg);
-
-
 
 
 		// Draw arrows to link courses
@@ -308,16 +322,25 @@ function createGraph(datum) {
 	      d3.select("#order-select")
 	      .on("change", function() {
 
+			// SHOW GUIDELINES ON SCREEN
+			var order_by = $("#order-select > option:selected").prop("label");
+			if(order_by == "Level") {
+				updateGuideLines(levels, levelScale);
+			} else if(order_by == "Subject") {
+				updateGuideLines(d3.map(subjects, function(e) { return e[0] }), subjectScale);
+			} else if(order_by == "Prereq Count") {
+				updateGuideLines(arr, linkScale);			
+			}
+
+
 			// Re-compute y force on graph
 			simulation.force("y").initialize(data);
 
 			// Restart simulation
 			simulation
-			.alpha(0.2)
+			.alpha(0.3)
 			.alphaTarget(0)
 			.restart();
-
-
 			
 		});
 
@@ -350,6 +373,7 @@ function createGraph(datum) {
 	  	legend.append("text")
 	  	.text(d)
 	  	.attr("transform", "translate(" + radius*2 + "," + ((idx*radius*3)+radius) + ")");
+
 	  });
 
 	  var search = svg.append("g")
