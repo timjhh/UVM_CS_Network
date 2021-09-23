@@ -1,4 +1,30 @@
-window.order = 1;
+
+
+function showGuideLines(arr, scale, svg) {
+
+	console.log(d3.select(".links"));
+
+	var lines = svg.append("g")
+	.attr("class", "guides")
+	.selectAll("line")
+	.data(arr)
+	.enter().append("g");
+
+	lines
+	.append("line")
+	.attr("y1", (d,idx) => scale(idx))
+	.attr("y2", (d,idx) => scale(idx))
+	.attr("x1", 0)
+	.attr("x2", 1200)
+	.attr("stroke", "red")
+	.style("stroke-width", "2")
+
+	lines
+	.append("text")
+	.attr("x", 6)
+	.attr("y", (d,idx) => scale(idx))
+	.text(d => d);
+}
 
 function updateColors(selection) {
 
@@ -98,20 +124,20 @@ function createGraph(datum) {
 	var forceY = d3.forceY(function(d) {
 
 		var order_by = $("#order-select > option:selected").prop("label");
-			
-			if(order_by == "Level") {
-				
-				$("#legtext").text("Course Level");
-				return levelScale(d.name.match(/\d/));
 
-			} else if(order_by == "Subject") {
+		if(order_by == "Level") {
 
-				$("#legtext").text("Course Subject");
-				return subjectScale(d.name.match(/[A-Z]+/));
+			$("#legtext").text("Course Level");
+			return levelScale(d.name.match(/\d/));
 
-			} else if(order_by == "Prereq Count") {
+		} else if(order_by == "Subject") {
 
-				$("#legtext").text("Prereq Count");
+			$("#legtext").text("Course Subject");
+			return subjectScale(d.name.match(/[A-Z]+/));
+
+		} else if(order_by == "Prereq Count") {
+
+			$("#legtext").text("Prereq Count");
 				//console.log(linkScale(prCount.get(d.name)));
 				//console.log(prCount.get(d.name));
 				//console.log(linkScale(prCount.get(d.name) ? prCount.get(d.name) : 0));
@@ -124,125 +150,134 @@ function createGraph(datum) {
 			// Default, no directed force added
 			return null;
 
-	}).strength(function() {
-		
-		order_by = $("#order-select > option:selected").prop("label");
-		if(!options.includes(order_by)) {
-			return 0;
-		}
-		return 0.5;
-	
-	});
+		}).strength(function() {
 
-	d3.select("#color-select")
+			order_by = $("#order-select > option:selected").prop("label");
+
+			// If the 'default' ordering of nodes is selected, no strength should be applied
+			if(!options.includes(order_by)) {
+				return 0;
+			}
+
+			// Otherwise, bind the graph together to show special ordering
+			return 1;
+
+		});
+
+		d3.select("#color-select")
 		.on("change", function() {
 			let colSel = d3.select(this).property("value");
 			updateColors(colSel);
 		});
 
+		
 
-	d3.select("#graph")
+		d3.select("#graph")
 		.append("svg")
 		.attr("width", width)
 		.attr("height", height)
 		.style("border", "1px solid black");
 
-	var svg = d3.select("svg"),
-	    width = svg.attr("width"),
-	    height = svg.attr("height");
+		var svg = d3.select("svg"),
+		width = svg.attr("width"),
+		height = svg.attr("height");
 
-	var simulation = d3.forceSimulation()
-	    .force("link", d3.forceLink().id(function(d) { return d.name; }).strength(0.1))
-	    .force("charge", d3.forceManyBody())
-	    .force("repel", d3.forceManyBody().strength(-30))
-	    .force("center", d3.forceCenter(width / 2, height / 2))
-	    .force("x", forceX)
-	    .force("y", forceY);
-
-
-	// Draw arrows to link courses
-	svg.append("svg:defs").selectAll("marker")
-	    .data(["end"])
-	  .enter().append("svg:marker")
-	    .attr("id", String)
-	    .attr("viewBox", "0 -5 10 10")
-	    .attr("refX", 15)
-	    .attr("refY", -1.5)
-	    .attr("markerWidth", 6)
-	    .attr("markerHeight", 6)
-	    .attr("orient", "auto")
-	  .append("svg:path")
-	    .attr("d", "M0,-5L10,0L0,5");
+		var simulation = d3.forceSimulation()
+		.force("link", d3.forceLink().id(function(d) { return d.name; }).strength(0.1))
+		.force("charge", d3.forceManyBody())
+		.force("repel", d3.forceManyBody().strength(-30))
+		.force("center", d3.forceCenter(width / 2, height / 2))
+		.force("x", forceX)
+		.force("y", forceY);
 
 
-	  // Draw links between nodes,
-	  // Class the links based on their prereq/coreq status attribute
-	  // Then, append arrows to the end of each link
-	  var link = svg.append("g")
-	    .attr("class", "links")
-	    .selectAll("line")
-	    .data(links)
-	    .enter().append("line")
-	      .attr("class", function(d) {
-	      	if(d.status == 1) {
-	      		return "cr"
-	      	} else if(d.status == 2) {
-	      		return "cl"
-	      	} else if(d.status == 3) {
-	      		return "or"
-	      	}
-	      	return "ln";
-	      })
-	    .style("stroke-width", function(d) { return 1.5; })
-    	.attr("marker-end", "url(#end)");
 
-	  var node = svg.append("g")
-	      .attr("class", "nodes")
-	    .selectAll("g")
-	    .data(data)
-	    .enter().append("g");
-	    
-	  svg.on("click", function(d) {
-
-	  		if(d3.event.target.tagName == "svg") {
-	  			node.attr("opacity", 1);
-	  			link.attr("opacity", 1);
-	  		}
-
-	  });
+		// SHOW GUIDELINES ON SCREEN
+		showGuideLines(arr, linkScale, svg);
 
 
-	  var circles = node.append("circle")
-	      .attr("r", radius)
-	      .attr("fill", d =>  magmaClr(d.name))
-	      .on("click", function(d) {
-
-	      	// First, select the title and description to append to the page
-	      	d3.select("#ttl")
-	      		.text((d.alias ? d.alias+"/" : "") + " " + d.ttl);
-	      	d3.select("#desc")
-	      		.text(d.desc);
-
-	      	var connected = link.filter(e => e.source.name == d.name || e.target.name == d.name);
 
 
-	      	node.attr("opacity", 0.1);
-	      	link.attr("opacity", e => (e.source.name == d.name || e.target.name == d.name) ? 1 : 0.1);
+		// Draw arrows to link courses
+		svg.append("svg:defs").selectAll("marker")
+		.data(["end"])
+		.enter().append("svg:marker")
+		.attr("id", String)
+		.attr("viewBox", "0 -5 10 10")
+		.attr("refX", 15)
+		.attr("refY", -1.5)
+		.attr("markerWidth", 6)
+		.attr("markerHeight", 6)
+		.attr("orient", "auto")
+		.append("svg:path")
+		.attr("d", "M0,-5L10,0L0,5");
 
-	      	connected.each(function(g) {
+		// Draw links between nodes,
+		// Class the links based on their prereq/coreq status attribute
+		// Then, append arrows to the end of each link
+		var link = svg.append("g")
+		.attr("class", "links")
+		.selectAll("line")
+		.data(links)
+		.enter().append("line")
+		.attr("class", function(d) {
+			if(d.status == 1) {
+				return "cr"
+			} else if(d.status == 2) {
+				return "cl"
+			} else if(d.status == 3) {
+				return "or"
+			}
+			return "ln";
+		})
+		.style("stroke-width", function(d) { return 1.5; })
+		.attr("marker-end", "url(#end)");
 
-	      		node.filter(h => h.name == g.source.name || h.name == g.target.name).attr("opacity", 1);
-	      	});
-
-	      })
-	      .call(d3.drag()
-	          .on("start", dragstarted)
-	          .on("drag", dragged)
-	          .on("end", dragended));
+		var node = svg.append("g")
+		.attr("class", "nodes")
+		.selectAll("g")
+		.data(data)
+		.enter().append("g");
 
 
-	  var labels = node.append("text")
-	      .text((d) => d.name.toUpperCase())
+		svg.on("click", function(d) {
+
+			if(d3.event.target.tagName == "svg") {
+				node.attr("opacity", 1);
+				link.attr("opacity", 1);
+			}
+
+		});
+
+
+		var circles = node.append("circle")
+		.attr("r", radius)
+		.attr("fill", d =>  magmaClr(d.name))
+		.on("click", function(d) {
+
+		  	// First, select the title and description to append to the page
+		  	d3.select("#ttl")
+		  	.text((d.alias ? d.alias+"/" : "") + " " + d.ttl);
+		  	d3.select("#desc")
+		  	.text(d.desc);
+
+		  	var connected = link.filter(e => e.source.name == d.name || e.target.name == d.name);
+
+		  	node.attr("opacity", 0.1);
+		  	link.attr("opacity", e => (e.source.name == d.name || e.target.name == d.name) ? 1 : 0.1);
+
+		  	connected.each(function(g) {
+		  		node.filter(h => h.name == g.source.name || h.name == g.target.name).attr("opacity", 1);
+		  	});
+		  })
+		.call(d3.drag()
+			.on("start", dragstarted)
+			.on("drag", dragged)
+			.on("end", dragended));
+
+
+		var labels = node.append("text")
+		.text((d) => d.name.toUpperCase())
 	      //.attr('x', -radius) // Optional styling for large circles
 	      //.style("font-size", "10px")
 	      .attr('x', 6)
@@ -250,9 +285,9 @@ function createGraph(datum) {
 	      .style("font-weight", "bold")
 	      .on("click", function(d) {
 	      	d3.select("#ttl")
-	      		.text((d.alias ? d.alias+"/" : "") + " " + d.ttl)
+	      	.text((d.alias ? d.alias+"/" : "") + " " + d.ttl)
 	      	d3.select("#desc")
-	      		.text(d.desc)
+	      	.text(d.desc)
 
 	      	var connected = link.filter(e => e.source.name == d.name || e.target.name == d.name);
 
@@ -270,18 +305,18 @@ function createGraph(datum) {
 	      })
 	      .attr('y', 3);
 
-	d3.select("#order-select")
-		.on("change", function() {
+	      d3.select("#order-select")
+	      .on("change", function() {
 
 			// Re-compute y force on graph
 			simulation.force("y").initialize(data);
 
 			// Restart simulation
 			simulation
-				.alpha(0.2)
-				.alphaTarget(0)
-				.restart();
- 
+			.alpha(0.2)
+			.alphaTarget(0)
+			.restart();
+
 
 			
 		});
@@ -289,8 +324,8 @@ function createGraph(datum) {
 
 	  // Build physical legend component and styling
 	  var legend = svg.append("g")
-	  	  .style("border", "1px solid black")
-	      .attr('transform', 'translate(' + parseFloat(width-150) + ',' + '50)');
+	  .style("border", "1px solid black")
+	  .attr('transform', 'translate(' + parseFloat(width-150) + ',' + '50)');
 
 	  // Append search bar to legend area
 	  legend.append("input")
@@ -299,86 +334,74 @@ function createGraph(datum) {
 
 	  // Append title to legend
 	  legend.append("text")
-	  	.attr("id", "legtext")
-	  	.attr("font-weight", "bold")
-	  	.text("Class Level")
-	  	.attr("transform", "translate(-20,-15)");
+	  .attr("id", "legtext")
+	  .attr("font-weight", "bold")
+	  .text("Class Level")
+	  .attr("transform", "translate(-20,-15)");
 
 	  // Build legend by appending labels
 	  levels.map(function(d, idx) {
 
-		  legend.append("circle")
-		      .attr("r", radius)
-		      .attr("transform", "translate(0," + idx*radius*3 + ")")
-		      .attr("fill", d3.interpolateMagma(parseFloat(idx/4)));
+	  	legend.append("circle")
+	  	.attr("r", radius)
+	  	.attr("transform", "translate(0," + idx*radius*3 + ")")
+	  	.attr("fill", d3.interpolateMagma(parseFloat(idx/4)));
 
-		  legend.append("text")
-		      .text(d)
-		      .attr("transform", "translate(" + radius*2 + "," + ((idx*radius*3)+radius) + ")");
+	  	legend.append("text")
+	  	.text(d)
+	  	.attr("transform", "translate(" + radius*2 + "," + ((idx*radius*3)+radius) + ")");
 	  });
 
 	  var search = svg.append("g")
-	  	.attr("class", "md-form mt-0")
-	  	.attr('transform', 'translate(' + parseFloat(150) + ',' + '50)');
+	  .attr("class", "md-form mt-0")
+	  .attr('transform', 'translate(' + parseFloat(150) + ',' + '50)');
 
 	  search.append("input")
-	  	.attr("class", "form-control")
-	  	.attr("type", "text")
-	  	.attr("placeholder", "Search")
-	  	.attr("aria-label", "Search");
+	  .attr("class", "form-control")
+	  .attr("type", "text")
+	  .attr("placeholder", "Search")
+	  .attr("aria-label", "Search");
 
 
 	  node.append("title")
-	      .text(function(d) { return d.id });
+	  .text(function(d) { return d.id });
 
 	  simulation
-	      .nodes(data)
-	      .on("tick", ticked);
+	  .nodes(data)
+	  .on("tick", ticked);
 
 	  simulation.force("link")
-	      .links(links);
+	  .links(links);
 
 	  function ticked() {
 
-	    // path.attr("d", function(d) {
-	    //     var dx = d.target.x - d.source.x,
-	    //         dy = d.target.y - d.source.y,
-	    //         dr = Math.sqrt(dx * dx + dy * dy);
-	    //     return "M" + 
-	    //         d.source.x + "," + 
-	    //         d.source.y + "A" + 
-	    //         dr + "," + dr + " 0 0,1 " + 
-	    //         d.target.x + "," + 
-	    //         d.target.y;
-	    // });
-
 	    link
-	        .attr("x1", function(d) { return d.source.x; })
-	        .attr("y1", function(d) { return d.source.y; })
-	        .attr("x2", function(d) { return d.target.x; })
-	        .attr("y2", function(d) { return d.target.y; });
+	    .attr("x1", function(d) { return d.source.x; })
+	    .attr("y1", function(d) { return d.source.y; })
+	    .attr("x2", function(d) { return d.target.x; })
+	    .attr("y2", function(d) { return d.target.y; });
 
 	    node
-	        .attr("transform", function(d) {
-	       	    return "translate(" + (d.x = Math.max(radius, Math.min(width - radius, d.x))) + "," + (d.y = Math.max(radius, Math.min(height - radius, d.y))) + ")";	
-	        });
+	    .attr("transform", function(d) {
+	    	return "translate(" + (d.x = Math.max(radius, Math.min(width - radius, d.x))) + "," + (d.y = Math.max(radius, Math.min(height - radius, d.y))) + ")";	
+	    });
 
-	  }
+	}
 
 	function dragstarted(d) {
-	  if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-	  d.fx = d.x;
-	  d.fy = d.y;
+		if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+		d.fx = d.x;
+		d.fy = d.y;
 	}
 
 	function dragged(d) {
-	  d.fx = d3.event.x;
-	  d.fy = d3.event.y;
+		d.fx = d3.event.x;
+		d.fy = d3.event.y;
 	}
 
 	function dragended(d) {
-	  if (!d3.event.active) simulation.alphaTarget(0);
-	  d.fx = null;
-	  d.fy = null;
+		if (!d3.event.active) simulation.alphaTarget(0);
+		d.fx = null;
+		d.fy = null;
 	}
 }
