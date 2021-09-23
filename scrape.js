@@ -106,7 +106,6 @@ function getCourseInfo(data) {
 
 			if(cl < idx && cl != -1) {
 
-				//links.push({source: prereq[0], target: course.name, value: 4, status: 2 });
 				course.alias = prereq[0];
 			} else if(cr < idx && cr != -1) {
 				links.push({source: prereq[0], target: course.name, value: 1, status: 1 });
@@ -152,8 +151,7 @@ function getCourseInfo(data) {
 
 	// If prereq course is not in database, add to course list
 	links.forEach(function(d) {
-
-
+		
 		if(!(titles.includes(d.source))) {
 
 			titles.push(d.source);

@@ -2,7 +2,7 @@ window.order = 1;
 
 function updateColors(selection) {
 
-	let options = ["Level", "Subject"];
+	let options = ["Level", "Subject", "Prerequisites"];
 	let val;
 	let circles = d3.selectAll("circle");
 	
@@ -44,7 +44,7 @@ function createGraph(datum) {
 	var data = datum[0];
 	var links = datum[1];
 	var width = 1200,
-	height = 600;
+	height = 800;
 
 
 	// Node circle radius
@@ -59,6 +59,7 @@ function createGraph(datum) {
 
 	// Define legend levels and coloring for the graph
 	var levels = ["0XX", "1XX", "2XX"];
+	var options = ["Level", "Subject", "Prerequisites"];
 
 
 	// DEFINE SCALE TYPES HERE
@@ -69,15 +70,15 @@ function createGraph(datum) {
 	// Scale subjects such as 'MATH', 'CS'
 	var subjectScale = getYScale(d3.map(subjects, function(e) { return e[0] }), height);
 
+	console.log(links);
+	console.log(d3.rollup(links, v => v.source, d => d.target));
+
+	// Scale number of prerequisites
+	//var linkScale = getYScale(, height);
 
 
+	// Define color scheme for nodes, d3's Magma scheme imported from chromatic palettes
 	let magmaClr = (d) => d3.interpolateMagma( parseInt(d.match(/\d/)) / 4 );
-
-	d3.select("#order-select")
-		.on("change", function() {
-			let ordSel = d3.select(this).property("value");
-			window.order = parseInt(ordSel);
-		});
 
 
 	// Set the x-position of nodes in accordance with their set order. Otherwise, set 0 x-force for an undirected graph
@@ -106,11 +107,13 @@ function createGraph(datum) {
 			return null;
 
 	}).strength(function() {
+		
 		order_by = $("#order-select > option:selected").prop("label");
-		if(order_by != "Level" && order_by != "Subject") {
+		if(!options.includes(order_by)) {
 			return 0;
 		}
 		return 0.5;
+	
 	});
 
 	d3.select("#color-select")
@@ -122,8 +125,8 @@ function createGraph(datum) {
 
 	d3.select("#graph")
 		.append("svg")
-		.attr("width", "1200")
-		.attr("height", "600")
+		.attr("width", width)
+		.attr("height", height)
 		.style("border", "1px solid black");
 
 	var svg = d3.select("svg"),
@@ -158,7 +161,7 @@ function createGraph(datum) {
 	  // Class the links based on their prereq/coreq status attribute
 	  // Then, append arrows to the end of each link
 	  var link = svg.append("g")
-	      .attr("class", "links")
+	    .attr("class", "links")
 	    .selectAll("line")
 	    .data(links)
 	    .enter().append("line")
@@ -222,8 +225,11 @@ function createGraph(datum) {
 
 	  var labels = node.append("text")
 	      .text((d) => d.name.toUpperCase())
+	      //.attr('x', -radius) // Optional styling for large circles
+	      //.style("font-size", "10px")
 	      .attr('x', 6)
 	      .style("cursor", "pointer")
+	      .style("font-weight", "bold")
 	      .on("click", function(d) {
 	      	d3.select("#ttl")
 	      		.text((d.alias ? d.alias+"/" : "") + " " + d.ttl)
