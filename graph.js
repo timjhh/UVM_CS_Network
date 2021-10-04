@@ -184,7 +184,6 @@ function createGraph(datum) {
 
 			// Otherwise, bind the graph together to show special ordering
 			return 0.5;
-
 		});
 
 		d3.select("#color-select")

@@ -6,3 +6,6 @@ The UVM computer science department hosts a variety of courses, linked together 
 it feels somewhat difficult to read through.
 
 This is an interactive D3.js force directed graph that scrapes the above page, parses all class names, and develops links based on requirements for a course.
+
+## Example
+![Screenshot Example](screenshot.png)
