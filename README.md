@@ -7,5 +7,8 @@ it feels somewhat difficult to read through.
 
 This is an interactive D3.js force directed graph that scrapes the above page, parses all class names, and develops links based on requirements for a course.
 
-## Example
+## Examples
 ![Screenshot Example](screenshot.png)
+
+
+![Screenshot Example 2](screenshot2.png)
